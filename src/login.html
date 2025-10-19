@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>Admin Bejelentkezés</title>
+<script type="module">
+import { supabase } from './supabaseClient.js';
+
+// ellenőrzi, hogy a user admin
+async function isAdmin(userId) {
+  const { data, error } = await supabase
+    .from('admins')
+    .select('user_id')
+    .eq('user_id', userId)
+    .maybeSingle();
+  return data !== null;
+}
+
+// login folyamat
+async function login(e) {
+  e.preventDefault();
+
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+
+  if (!email || !password) {
+    alert('Adj meg emailt és jelszót!');
+    return;
+  }
+
+  // Supabase login
+  const { data: { user }, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) {
+    alert('Hiba a bejelentkezésnél: ' + error.message);
+    return;
+  }
+
+  // ellenőrizzük admin jogot
+  const admin = await isAdmin(user.id);
+  if (!admin) {
+    alert('Nincs admin jogosultságod.');
+    location.href = '/';
+    return;
+  }
+
+  // sikeres login, átirányítás az upload oldalra
+  location.href = '/upload.html';
+}
+
+// kijelentkezés gomb (opcionális)
+async function logout() {
+  await supabase.auth.signOut();
+  alert('Kijelentkeztél.');
+  location.href = '/';
+}
+
+window.login = login;
+window.logout = logout;
+</script>
+</head>
+<body>
+<h1>Admin Bejelentkezés</h1>
+<form id="loginForm" onsubmit="login(event)">
+  <input type="email" id="email" placeholder="Email" required><br><br>
+  <input type="password" id="password" placeholder="Jelszó" required><br><br>
+  <button type="submit">Bejelentkezés</button>
+</form>
+<br>
+<button onclick="logout()">Kijelentkezés</button>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<script type="module">
+import { supabase } from './supabaseClient.js';
+
+async function isAdmin() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const { data, error } = await supabase
+    .from('admins')
+    .select('user_id')
+    .eq('user_id', user.id);
+
+  return (data && data.length > 0);
+}
+
+async function checkAuthAndShow() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    alert('Be kell jelentkezned.');
+    location.href = '/login.html';
+    return;
+  }
+  const admin = await isAdmin();
+  if (!admin) {
+    alert('Nincs admin jogosultságod.');
+    location.href = '/login.html';
+    return;
+  }
+  document.getElementById('uploadForm').style.display = 'block';
+  if (admin){
+    const { data } = await supabase
+    .from('graffitis')
+    .select('*')
+    .eq('published', false)
+    .order('created_at', { ascending: false });
+
+    const modList = document.getElementById('moderationList');
+    data.forEach(item => {
+        const li = document.createElement('li');
+        li.innerText = `${item.name} - Feltöltve: ${new Date(item.created_at).toLocaleString()}`;
+        const approveBtn = document.createElement('button');
+        approveBtn.innerText = 'Jóváhagyás';
+        approveBtn.onclick = async () => {
+        const { error } = await supabase
+            .from('graffitis')
+            .update({ published: true })
+            .eq('id', item.id);
+        if (error) {
+            alert('Hiba a jóváhagyás során: ' + error.message);
+        } else {
+            alert('Sikeres jóváhagyás.');
+            li.remove();
+        }
+        };
+        li.appendChild(approveBtn);
+        modList.appendChild(li);
+    });
+  }
+}
+
+async function upload(e) {
+  e.preventDefault();
+  const name = document.getElementById('name').value.trim();
+  const desc = document.getElementById('desc').value.trim();
+  const file = document.getElementById('image').files[0];
+  if (!name || !file) return alert('Név és kép kötelező.');
+
+  if (!file.type.startsWith('image/')) return alert('Csak képfájl!');
+  if (file.size > 5*1024*1024) return alert('Max 5 MB.');
+
+  // slug készítése (alap)
+  const slug = name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'');
+
+  // ellenőrizzük, hogy a slug foglalt-e
+  const { data: existing } = await supabase.from('graffitis').select('id').eq('slug', slug).maybeSingle();
+  if (existing) return alert('Ez a név már létezik, válassz másikat.');
+
+  // feltöltés storage-ba
+  const filePath = `public/${Date.now()}_${file.name}`;
+  const { data: uploadData, error: uploadErr } = await supabase.storage
+    .from('graffiti-images')
+    .upload(filePath, file);
+
+  if (uploadErr) return alert('Feltöltési hiba: ' + uploadErr.message);
+
+  // beszúrás a táblába, published = false (moderáció)
+  const { data, error } = await supabase
+    .from('graffitis')
+    .insert([{ name, slug, description: desc, image_path: filePath, author_id: (await supabase.auth.getUser()).data.user.id, published: false }]);
+
+  if (error) return alert('DB hiba: ' + error.message);
+  alert('Sikeres feltöltés. Vár a moderációra.');
+  location.href = '/';
+}
+
+
+
+window.addEventListener('DOMContentLoaded', checkAuthAndShow);
+window.upload = upload;
+</script>

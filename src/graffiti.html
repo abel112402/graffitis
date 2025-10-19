@@ -1,0 +1,35 @@
+<script type="module">
+import { supabase } from './supabaseClient.js';
+
+async function loadDetail() {
+  const slug = new URLSearchParams(location.search).get('slug');
+  if (!slug) { document.body.innerText = 'Nincs megadva.'; return; }
+
+  const { data, error } = await supabase
+    .from('graffitis')
+    .select('id,name,description,image_path,created_at')
+    .eq('slug', slug)
+    .maybeSingle();   // single() dob, ha nincs adat
+
+  if (error || !data) { document.body.innerText = 'Nincs ilyen graffiti.'; return; }
+
+  document.getElementById('title').innerText = data.name;
+  document.getElementById('desc').innerText = data.description || '';
+
+  if (data.image_path) {
+    // signed url (privát bucket miatt)
+    const { data: urlData, error: urlErr } = await supabase.storage
+      .from('graffiti-images')
+      .createSignedUrl(data.image_path, 60); // 60s; lehet több, de rövid az biztonságosabb
+
+    if (!urlErr) {
+      const img = document.createElement('img');
+      img.src = urlData.signedUrl;
+      img.style.maxWidth = '800px';
+      document.getElementById('image').appendChild(img);
+    }
+  }
+}
+
+window.addEventListener('DOMContentLoaded', loadDetail);
+</script>

@@ -1,0 +1,41 @@
+<script type="module">
+import { supabase } from './supabaseClient.js';
+
+async function loadIndex() {
+  // lekérdezzük csak a published = true elemeket (RLS is ezt engedi)
+    const { data, error } = await supabase
+    .from('graffiti')
+    .select('id,name,slug')
+    .order('name', { ascending: true });
+
+    if (error) return console.error(error);
+
+    const groups = {};
+    data.forEach(g => {
+    const letter = (g.name || '?').trim().charAt(0).toUpperCase();
+    (groups[letter] ||= []).push(g);
+    });
+
+    const header = document.createElement('header');
+    header.innerHTML = '<h1>Graffiti Galéria</h1><nav><a href="./login.html">Admin Bejelentkezés</a></nav>';
+
+
+    const container = document.getElementById('list');
+    Object.keys(groups).sort().forEach(letter => {
+    const h = document.createElement('h3'); h.innerText = letter;
+    container.appendChild(h);
+    const ul = document.createElement('ul');
+    groups[letter].forEach(item => {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = `graffiti.html?slug=${encodeURIComponent(item.slug)}`;
+        a.innerText = item.name;
+        li.appendChild(a);
+        ul.appendChild(li);
+    });
+    container.appendChild(ul);
+    });
+}
+
+window.addEventListener('DOMContentLoaded', loadIndex);
+</script>

@@ -1,5 +1,79 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>Graffiti Feltöltés</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    body { font-family: sans-serif; max-width: 800px; margin: auto; padding: 20px; }
+    form { display: flex; flex-direction: column; gap: 10px; }
+    #moderationList li { margin-bottom: 5px; }
+    #map { height: 400px; margin-top: 10px; }
+</style>
+</head>
+<body>
+<h1>Graffiti Feltöltés</h1>
+
+<!-- Feltöltő form (alapból rejtve, JS fogja megjeleníteni) -->
+<form id="uploadForm" style="display:none;" onsubmit="upload(event)">
+  <label>
+    Név:
+    <input type="text" id="name" required placeholder="Graffiti neve">
+  </label>
+  <label>
+    Kép:
+    <input type="file" id="image" accept="image/*" required>
+  </label>
+
+  <!-- Térkép a hely kijelöléséhez -->
+  <label>
+    Hely:
+    <div id="map"></div>
+    <small>Kattints a térképre a graffiti helyének kijelöléséhez.</small>
+  </label>
+
+  <button type="submit">Feltöltés</button>
+</form>
+
+<hr>
+
+<!-- Admin moderációs lista -->
+<div id="adminSection" style="display:none;">
+  <h2>Moderáció</h2>
+  <ul id="moderationList"></ul>
+</div>
+
 <script type="module">
 import { supabase } from './supabaseClient.js';
+import * as L from 'https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.esm.js';
+
+let selectedLat = null;
+let selectedLng = null;
+
+// Leaflet térkép inicializálása
+const map = L.map('map').setView([47.4979, 19.0402], 13); // Budapest középpont
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+let marker = null;
+map.on('click', e => {
+  selectedLat = e.latlng.lat;
+  selectedLng = e.latlng.lng;
+
+  if (marker) map.removeLayer(marker);
+  marker = L.marker([selectedLat, selectedLng]).addTo(map);
+});
+
+// Ellenőrizzük, hogy a user admin-e
+function sanitizeFileName(name) {
+  return name
+    .normalize('NFD')                 // ékezetek eltávolítása
+    .replace(/[\u0300-\u036f]/g, '')  // diakritikus jelek törlése
+    .replace(/\s+/g, '-')             // szóköz → kötőjel
+    .replace(/[^a-zA-Z0-9\-_.]/g, ''); // egyéb tiltott karakterek
+}
 
 async function isAdmin() {
   const { data: { user } } = await supabase.auth.getUser();
@@ -13,88 +87,110 @@ async function isAdmin() {
   return (data && data.length > 0);
 }
 
+// Megjelenítjük a feltöltő űrlapot minden usernek
+// Adminoknak pedig a moderációs listát is
 async function checkAuthAndShow() {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    alert('Be kell jelentkezned.');
-    location.href = '/login.html';
-    return;
-  }
-  const admin = await isAdmin();
-  if (!admin) {
-    alert('Nincs admin jogosultságod.');
-    location.href = '/login.html';
-    return;
-  }
-  document.getElementById('uploadForm').style.display = 'block';
-  if (admin){
-    const { data } = await supabase
-    .from('graffitis')
-    .select('*')
-    .eq('published', false)
-    .order('created_at', { ascending: false });
 
+  // Feltöltő form látható
+  document.getElementById('uploadForm').style.display = 'block';
+
+  // Admin check
+  const admin = await isAdmin();
+  console.log('Admin check:', admin); // true/false
+
+  if (admin) {
+    document.getElementById('adminSection').style.display = 'block';
+
+    const { data, error } = await supabase
+      .from('graffiti')
+      .select('*')
+      .eq('accepted', false)
+      .order('created_at', { ascending: false });
+
+    if (error) return console.error(error);
+    console.log('Moderációs elemek:', data);
     const modList = document.getElementById('moderationList');
+    modList.innerHTML = '';
+
     data.forEach(item => {
-        const li = document.createElement('li');
-        li.innerText = `${item.name} - Feltöltve: ${new Date(item.created_at).toLocaleString()}`;
-        const approveBtn = document.createElement('button');
-        approveBtn.innerText = 'Jóváhagyás';
-        approveBtn.onclick = async () => {
+      const li = document.createElement('li');
+      li.innerText = `${item.name} - Feltöltve: ${new Date(item.created_at).toLocaleString()}`;
+
+      const approveBtn = document.createElement('button');
+      approveBtn.innerText = 'Jóváhagyás';
+      approveBtn.onclick = async () => {
         const { error } = await supabase
-            .from('graffitis')
-            .update({ published: true })
-            .eq('id', item.id);
+          .from('graffiti')
+          .update({ accepted: true })
+          .eq('id', item.id);
+
         if (error) {
-            alert('Hiba a jóváhagyás során: ' + error.message);
+          alert('Hiba a jóváhagyás során: ' + error.message);
         } else {
-            alert('Sikeres jóváhagyás.');
-            li.remove();
+          alert('Sikeres jóváhagyás.');
+          li.remove();
         }
-        };
-        li.appendChild(approveBtn);
-        modList.appendChild(li);
+      };
+
+      li.appendChild(approveBtn);
+      modList.appendChild(li);
     });
   }
 }
 
+// Feltöltés bárki által
 async function upload(e) {
-  e.preventDefault();
-  const name = document.getElementById('name').value.trim();
-  const desc = document.getElementById('desc').value.trim();
-  const file = document.getElementById('image').files[0];
-  if (!name || !file) return alert('Név és kép kötelező.');
+    e.preventDefault();
+    const name = document.getElementById('name').value.trim();
+    const file = document.getElementById('image').files[0];
 
-  if (!file.type.startsWith('image/')) return alert('Csak képfájl!');
-  if (file.size > 5*1024*1024) return alert('Max 5 MB.');
+    if (!name || !file) return alert('Név és kép kötelező.');
+    if (selectedLat === null || selectedLng === null) return alert('Válassz ki egy helyet a térképen!');
+    if (!file.type.startsWith('image/')) return alert('Csak képfájl!');
+    if (file.size > 5*1024*1024) return alert('Max 5 MB.');
 
-  // slug készítése (alap)
-  const slug = name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'');
+    const slug = name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'');
 
-  // ellenőrizzük, hogy a slug foglalt-e
-  const { data: existing } = await supabase.from('graffitis').select('id').eq('slug', slug).maybeSingle();
-  if (existing) return alert('Ez a név már létezik, válassz másikat.');
+    // Ellenőrizzük, hogy a slug már létezik-e
+    const { data: existing } = await supabase
+    .from('graffiti')
+    .select('id')
+    .eq('slug', slug)
+    .maybeSingle();
 
-  // feltöltés storage-ba
-  const filePath = `public/${Date.now()}_${file.name}`;
-  const { data: uploadData, error: uploadErr } = await supabase.storage
+    if (existing) return alert('Ez a név már létezik, válassz másikat.');
+
+    // Storage feltöltés
+    const safeFileName = sanitizeFileName(file.name);
+    const filePath = `uploads/${Date.now()}_${safeFileName}`;
+    const { data: uploadData, error: uploadErr } = await supabase.storage
     .from('graffiti-images')
     .upload(filePath, file);
 
-  if (uploadErr) return alert('Feltöltési hiba: ' + uploadErr.message);
+    if (uploadErr) return alert('Feltöltési hiba: ' + uploadErr.message);
+    console.log('Feltöltött file path:', uploadData.path); // fontos
 
-  // beszúrás a táblába, published = false (moderáció)
-  const { data, error } = await supabase
-    .from('graffitis')
-    .insert([{ name, slug, description: desc, image_path: filePath, author_id: (await supabase.auth.getUser()).data.user.id, published: false }]);
 
-  if (error) return alert('DB hiba: ' + error.message);
-  alert('Sikeres feltöltés. Vár a moderációra.');
-  location.href = '/';
+    // Beszúrás DB-be, accepted = false
+    const { data, error } = await supabase
+    .from('graffiti')
+    .insert([{
+        name, 
+        slug,
+        image_path: filePath,
+        latitude: selectedLat,
+        longitude: selectedLng,
+        accepted: false
+    }]);
+
+    if (error) return alert('DB hiba: ' + error.message);
+
+    alert('Sikeres feltöltés. Vár a moderációra.');
+    location.href = '/';
 }
-
-
 
 window.addEventListener('DOMContentLoaded', checkAuthAndShow);
 window.upload = upload;
 </script>
+</body>
+</html>

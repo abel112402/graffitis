@@ -33,14 +33,15 @@ async function login(e) {
     email,
     password
   });
-
   if (error) {
     alert('Hiba a bejelentkezésnél: ' + error.message);
     return;
   }
 
   // ellenőrizzük admin jogot
+  console.log('User ID:', user.id);   
   const admin = await isAdmin(user.id);
+  console.log('Admin check:', admin);
   if (!admin) {
     alert('Nincs admin jogosultságod.');
     location.href = '/';

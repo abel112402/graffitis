@@ -1,35 +1,72 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>Graffiti részletek</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  body { font-family: sans-serif; margin: auto; padding: 20px; }
+  img { max-width: 100%; height: auto; margin-top: 20px; }
+  #map { height: 400px; margin-top: 20px; }
+</style>
+</head>
+<body>
+
+<h1 id="title">Betöltés...</h1>
+<div id="image"></div>
+<div id="map"></div>
+
 <script type="module">
 import { supabase } from './supabaseClient.js';
+import * as L from 'https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.esm.js';
 
 async function loadDetail() {
   const slug = new URLSearchParams(location.search).get('slug');
   if (!slug) { document.body.innerText = 'Nincs megadva.'; return; }
 
   const { data, error } = await supabase
-    .from('graffitis')
-    .select('id,name,description,image_path,created_at')
+    .from('graffiti')   // Győződj meg róla, hogy a tábla neve helyes
+    .select('id,name,image_path,latitude,longitude,created_at')
     .eq('slug', slug)
     .maybeSingle();   // single() dob, ha nincs adat
 
   if (error || !data) { document.body.innerText = 'Nincs ilyen graffiti.'; return; }
 
   document.getElementById('title').innerText = data.name;
-  document.getElementById('desc').innerText = data.description || '';
 
-  if (data.image_path) {
-    // signed url (privát bucket miatt)
-    const { data: urlData, error: urlErr } = await supabase.storage
-      .from('graffiti-images')
-      .createSignedUrl(data.image_path, 60); // 60s; lehet több, de rövid az biztonságosabb
+    console.log('Graffiti adat:', data);
+    console.log('Kép elérési út:', data.image_path);
 
-    if (!urlErr) {
-      const img = document.createElement('img');
-      img.src = urlData.signedUrl;
-      img.style.maxWidth = '800px';
-      document.getElementById('image').appendChild(img);
+    if (data.image_path) {
+        try {
+        const { data: publicUrlData } = supabase.storage
+        .from('graffiti-images')
+        .getPublicUrl(data.image_path);
+
+        const img = document.createElement('img');
+        img.src = publicUrlData.publicUrl;
+        img.style.maxWidth = '800px';
+        document.getElementById('image').appendChild(img);
+
+        } catch (err) {
+        console.error('Hiba a képkérésnél:', err);
+        document.getElementById('image').innerText = 'Kép nem található.';
+        }
     }
-  }
+    // Térkép inicializálása
+    if (data.latitude && data.longitude) {
+        const map = L.map('map').setView([data.latitude, data.longitude], 16);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+    L.marker([data.latitude, data.longitude]).addTo(map)
+        .bindPopup(data.name)
+        .openPopup();
+    }
 }
 
 window.addEventListener('DOMContentLoaded', loadDetail);
 </script>
+
+</body>
+</html>

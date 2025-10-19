@@ -1,3 +1,8 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>Kezdőlap</title>
 <script type="module">
 import { supabase } from './supabaseClient.js';
 
@@ -6,6 +11,7 @@ async function loadIndex() {
     const { data, error } = await supabase
     .from('graffiti')
     .select('id,name,slug')
+    .eq('accepted', true)
     .order('name', { ascending: true });
 
     if (error) return console.error(error);
@@ -15,9 +21,14 @@ async function loadIndex() {
     const letter = (g.name || '?').trim().charAt(0).toUpperCase();
     (groups[letter] ||= []).push(g);
     });
+    console.log(groups);
 
-    const header = document.createElement('header');
-    header.innerHTML = '<h1>Graffiti Galéria</h1><nav><a href="./login.html">Admin Bejelentkezés</a></nav>';
+    const loginButton = document.createElement('div');
+    loginButton.innerHTML = '<h1>Graffiti Galéria</h1><nav><a href="./login.html">Admin Bejelentkezés</a></nav>';
+    document.querySelector('header').appendChild(loginButton);
+    const uploadButton = document.createElement('div');
+    uploadButton.innerHTML = '<nav><a href="./upload.html">Graffiti Feltöltés</a></nav>';
+    document.querySelector('header').appendChild(uploadButton);
 
 
     const container = document.getElementById('list');
@@ -39,3 +50,12 @@ async function loadIndex() {
 
 window.addEventListener('DOMContentLoaded', loadIndex);
 </script>
+</head>
+<body>
+<header>
+
+</header>
+<div id="list"></div>
+
+</body>
+</html>

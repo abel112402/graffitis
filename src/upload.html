@@ -1,195 +1,258 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
 <title>Graffiti Feltöltés</title>
+<link rel="stylesheet" href="uploadStyle.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<style>
-    body { font-family: sans-serif; max-width: 800px; margin: auto; padding: 20px; }
-    form { display: flex; flex-direction: column; gap: 10px; }
-    #moderationList li { margin-bottom: 5px; }
-    #map { height: 400px; margin-top: 10px; }
-</style>
 </head>
 <body>
 <h1>Graffiti Feltöltés</h1>
 
-<!-- Feltöltő form (alapból rejtve, JS fogja megjeleníteni) -->
-<form id="uploadForm" style="display:none;" onsubmit="upload(event)">
+<form id="uploadForm" onsubmit="upload(event)">
   <label>
-    Név:
+    Graffiti neve:
     <input type="text" id="name" required placeholder="Graffiti neve">
   </label>
+
   <label>
-    Kép:
-    <input type="file" id="image" accept="image/*" required>
+    Év:
+    <input type="number" id="year" required>
   </label>
 
-  <!-- Térkép a hely kijelöléséhez -->
   <label>
-    Hely:
+    Képek:
+    <input type="file" id="image" accept="image/*" multiple required>
+  </label>
+
+  <div id="category-select-div">
+    Kategória:
+    <div>
+      <select class="select-category" id="select-category">
+      </select>
+    </div>
+  </div>
+  <span id="selectCatErrorMsg" style="color: red; display: none;">Kérlek válassz kategóriát!</span>
+  <button id="category-select-btn" class="plus-icon">+</button>
+
+  <div id="add-category-div">
+      Új kategória:
+      <div>
+        <input type="text" class="add-category" id="add-category" placeholder="Kategória">
+      </div>
+  </div>
+  <span id="addCatErrorMsg" style="color: red; display: none;">Kérlek töltsd ki a mezőt!</span>
+  <button id="add-category-btn" class="plus-icon">+</button>
+
+  <label>
+    Hely: <span id="location-display">Kattints a térképre a város kijelöléséhez</span>
     <div id="map"></div>
-    <small>Kattints a térképre a graffiti helyének kijelöléséhez.</small>
   </label>
 
   <button type="submit">Feltöltés</button>
 </form>
 
-<hr>
-
-<!-- Admin moderációs lista -->
-<div id="adminSection" style="display:none;">
-  <h2>Moderáció</h2>
-  <ul id="moderationList"></ul>
-</div>
-
 <script type="module">
 import { supabase } from './supabaseClient.js';
 import * as L from 'https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.esm.js';
 
+// Kategóriák betöltése
+async function loadCategories() {
+  const { data, error } = await supabase
+    .from('category')
+    .select('id, category_name')
+    .order('category_name', { ascending: true });
+
+  if (error) return console.error('Hiba a kategóriák lekérésekor:', error);
+
+  const selectDivs = document.querySelector('#category-select-div').querySelectorAll('div');
+
+  const firstOption = document.createElement('option');
+  firstOption.value = '';
+  firstOption.textContent = 'Nincs kiválasztva';
+
+  selectDivs.forEach(div => {
+      div.querySelector('select').appendChild(firstOption);
+  })
+
+  data.forEach(cat => {
+    const option = document.createElement('option');
+    option.value = cat.id;
+    option.textContent = cat.category_name;
+
+    selectDivs.forEach(div => {
+      div.querySelector('select').appendChild(option);
+    })
+  });
+}
+loadCategories();
+
+////////////////////////////////////////////////
+// Kategória hozzáadás kezelése
+
+document.getElementById('category-select-btn').addEventListener('click', async e => {
+  e.preventDefault();
+
+  const selectCatDiv = document.getElementById('category-select-div');
+  const inputDivs = selectCatDiv.querySelectorAll('div');
+  const lastInput = inputDivs[inputDivs.length - 1].querySelector('select');
+
+  console.log(inputDivs);
+
+  if (!lastInput.value) {
+    document.getElementById('selectCatErrorMsg').style.display = 'inline';
+  } else {
+    document.getElementById('selectCatErrorMsg').style.display = 'none';
+    const newDiv = document.createElement('div');
+    newDiv.innerHTML += `
+      <select class="select-category"></select>
+    `;
+    selectCatDiv.appendChild(newDiv);
+    loadCategories();
+  }  
+});
+
+document.getElementById('add-category-btn').addEventListener('click', async e => {
+  e.preventDefault();
+
+  const addCatDiv = document.getElementById('add-category-div');
+  const inputDivs = addCatDiv.querySelectorAll('div');
+  const lastInput = inputDivs[inputDivs.length - 1].querySelector('input');
+
+
+  if (!lastInput.value.trim()) {
+    document.getElementById('addCatErrorMsg').style.display = 'inline';
+  }
+  else {
+    document.getElementById('addCatErrorMsg').style.display = 'none';
+    const newDiv = document.createElement('div');
+    newDiv.innerHTML += `
+      <input type="text" class="add-category" placeholder="Kategória">
+    `;
+    addCatDiv.appendChild(newDiv);
+  }
+});
+
+
+//////////////////////////////////////////////////
+
+document.getElementById('year').placeholder = new Date().getFullYear();
+document.getElementById('year').min = 1900;
+document.getElementById('year').max = new Date().getFullYear();
+
+
 let selectedLat = null;
 let selectedLng = null;
+let selectedCity = '';
 
-// Leaflet térkép inicializálása
-const map = L.map('map').setView([47.4979, 19.0402], 13); // Budapest középpont
-
+const map = L.map('map').setView([47.4979, 19.0402], 13);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
+const locationDisplay = document.getElementById('location-display');
 let marker = null;
-map.on('click', e => {
+
+map.on('click', async e => {
   selectedLat = e.latlng.lat;
   selectedLng = e.latlng.lng;
 
   if (marker) map.removeLayer(marker);
   marker = L.marker([selectedLat, selectedLng]).addTo(map);
+
+  try {
+    const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${selectedLat}&longitude=${selectedLng}&localityLanguage=hu`);
+    const data = await res.json();
+    selectedCity = data.city || data.locality || 'Ismeretlen város';
+    locationDisplay.textContent = selectedCity;
+  } catch(err) {
+    console.error(err);
+    locationDisplay.textContent = 'Hiba a város lekérésekor';
+  }
 });
 
-// Ellenőrizzük, hogy a user admin-e
 function sanitizeFileName(name) {
   return name
-    .normalize('NFD')                 // ékezetek eltávolítása
-    .replace(/[\u0300-\u036f]/g, '')  // diakritikus jelek törlése
-    .replace(/\s+/g, '-')             // szóköz → kötőjel
-    .replace(/[^a-zA-Z0-9\-_.]/g, ''); // egyéb tiltott karakterek
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/[^a-zA-Z0-9\-_.]/g, '');
 }
 
-async function isAdmin() {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return false;
-
-  const { data, error } = await supabase
-    .from('admins')
-    .select('user_id')
-    .eq('user_id', user.id);
-
-  return (data && data.length > 0);
-}
-
-// Megjelenítjük a feltöltő űrlapot minden usernek
-// Adminoknak pedig a moderációs listát is
-async function checkAuthAndShow() {
-
-  // Feltöltő form látható
-  document.getElementById('uploadForm').style.display = 'block';
-
-  // Admin check
-  const admin = await isAdmin();
-  console.log('Admin check:', admin); // true/false
-
-  if (admin) {
-    document.getElementById('adminSection').style.display = 'block';
-
-    const { data, error } = await supabase
-      .from('graffiti')
-      .select('*')
-      .eq('accepted', false)
-      .order('created_at', { ascending: false });
-
-    if (error) return console.error(error);
-    console.log('Moderációs elemek:', data);
-    const modList = document.getElementById('moderationList');
-    modList.innerHTML = '';
-
-    data.forEach(item => {
-      const li = document.createElement('li');
-      li.innerText = `${item.name} - Feltöltve: ${new Date(item.created_at).toLocaleString()}`;
-
-      const approveBtn = document.createElement('button');
-      approveBtn.innerText = 'Jóváhagyás';
-      approveBtn.onclick = async () => {
-        const { error } = await supabase
-          .from('graffiti')
-          .update({ accepted: true })
-          .eq('id', item.id);
-
-        if (error) {
-          alert('Hiba a jóváhagyás során: ' + error.message);
-        } else {
-          alert('Sikeres jóváhagyás.');
-          li.remove();
-        }
-      };
-
-      li.appendChild(approveBtn);
-      modList.appendChild(li);
-    });
-  }
-}
-
-// Feltöltés bárki által
 async function upload(e) {
-    e.preventDefault();
-    const name = document.getElementById('name').value.trim();
-    const file = document.getElementById('image').files[0];
+  e.preventDefault();
+  const name = document.getElementById('name').value.trim();
+  const year = parseInt(document.getElementById('year').value, 10);
+  const files = document.getElementById('image').files;
 
-    if (!name || !file) return alert('Név és kép kötelező.');
-    if (selectedLat === null || selectedLng === null) return alert('Válassz ki egy helyet a térképen!');
-    if (!file.type.startsWith('image/')) return alert('Csak képfájl!');
-    if (file.size > 5*1024*1024) return alert('Max 5 MB.');
+  const categoryIDs = []
+  const categorySelects = document.querySelectorAll('.select-category');
+  categorySelects.forEach(select => {
+    if (select.value) categoryIDs.push(select.value);
+  });
 
-    const slug = name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'');
+  const newCategories = [];
+  const newCategoryInputs = document.querySelectorAll('.add-category');
+  newCategoryInputs.forEach(input => {
+    const val = input.value.trim();
+    if (val) newCategories.push(val);
+  });
 
-    // Ellenőrizzük, hogy a slug már létezik-e
-    const { data: existing } = await supabase
+  if (newCategoryInputs.length == 0
+  && categoryIDs.length === 0){
+    return alert('Kérlek válassz vagy adj hozzá kategóriát!');
+  }
+
+
+  if (!name || !files.length || !selectedLat || !selectedLng) return alert('Töltsd ki a mezőket és válassz helyet!');
+
+  const slug = name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'');
+
+  const { data: existing } = await supabase
     .from('graffiti')
     .select('id')
     .eq('slug', slug)
     .maybeSingle();
 
-    if (existing) return alert('Ez a név már létezik, válassz másikat.');
+  if (existing) return alert('Ez a név már létezik, válassz másikat.');
 
-    // Storage feltöltés
+  const imagePaths = [];
+  for (let file of files) {
+    if (!file.type.startsWith('image/')) return alert('Csak képfájl!');
+    if (file.size > 5*1024*1024) return alert('Max 5 MB/file.');
+
     const safeFileName = sanitizeFileName(file.name);
     const filePath = `uploads/${Date.now()}_${safeFileName}`;
     const { data: uploadData, error: uploadErr } = await supabase.storage
-    .from('graffiti-images')
-    .upload(filePath, file);
+      .from('graffiti-images')
+      .upload(filePath, file);
 
     if (uploadErr) return alert('Feltöltési hiba: ' + uploadErr.message);
-    console.log('Feltöltött file path:', uploadData.path); // fontos
 
+    imagePaths.push(filePath);
+  }
 
-    // Beszúrás DB-be, accepted = false
-    const { data, error } = await supabase
+  const { data, error } = await supabase
     .from('graffiti')
     .insert([{
-        name, 
-        slug,
-        image_path: filePath,
-        latitude: selectedLat,
-        longitude: selectedLng,
-        accepted: false
+      name,
+      slug,
+      image_path: imagePaths,
+      year,
+      category_id: categoryIDs,
+      new_category: newCategories,
+      latitude: selectedLat,
+      longitude: selectedLng,
+      accepted: false,
+      city: selectedCity
     }]);
 
-    if (error) return alert('DB hiba: ' + error.message);
+  if (error) return alert('DB hiba: ' + error.message);
 
-    alert('Sikeres feltöltés. Vár a moderációra.');
-    location.href = '/';
+  alert('Sikeres feltöltés. Vár a moderációra.');
+  location.href = '/';
 }
 
-window.addEventListener('DOMContentLoaded', checkAuthAndShow);
 window.upload = upload;
 </script>
 </body>

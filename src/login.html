@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Admin Bejelentkezés</title>
+<link rel="stylesheet" href="loginStyle.css">
 <script type="module">
 import { supabase } from './supabaseClient.js';
 
@@ -49,18 +50,10 @@ async function login(e) {
   }
 
   // sikeres login, átirányítás az upload oldalra
-  location.href = '/upload.html';
-}
-
-// kijelentkezés gomb (opcionális)
-async function logout() {
-  await supabase.auth.signOut();
-  alert('Kijelentkeztél.');
   location.href = '/';
 }
 
 window.login = login;
-window.logout = logout;
 </script>
 </head>
 <body>
@@ -68,9 +61,9 @@ window.logout = logout;
 <form id="loginForm" onsubmit="login(event)">
   <input type="email" id="email" placeholder="Email" required><br><br>
   <input type="password" id="password" placeholder="Jelszó" required><br><br>
-  <button type="submit">Bejelentkezés</button>
+  <button type="submit" class="form-button"">Bejelentkezés</button>
 </form>
+<button class="form-button" onclick="location.href='/'">Főoldal</button>
 <br>
-<button onclick="logout()">Kijelentkezés</button>
 </body>
 </html>

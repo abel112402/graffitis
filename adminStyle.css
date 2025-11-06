@@ -1,0 +1,115 @@
+@import url('https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,200..900;1,7..72,200..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+html {
+    font-family: "Courier Prime", monospace;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 10px;
+    margin: 20px;
+    margin-top: 0;
+    background-color: rgb(230, 230, 230);
+}
+#body {
+    max-width: 1000px;
+    margin: auto;
+    padding: 20px;
+    background-color: rgb(230, 230, 230);
+    color: rgb(103, 103, 103);
+}
+h2 {
+    font-size: clamp(2rem, 2.5vw, 3rem);
+    margin-bottom: 10px;
+}
+.admin-h1, h2 {
+    color: rgb(103, 103, 103);
+}
+.admin-h1 {
+    font-size: 4rem;
+}
+#adminSection {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+#moderationList {
+    font-size: clamp(1.4rem, 1.5vw, 1.6rem);
+}
+
+#moderationList, #categoryList {
+    list-style: none;
+    padding: 0;
+    margin-top: 10px;
+}
+
+#moderationList li, #categoryList li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    border-bottom: 1px solid #e0e0e0;
+    border-radius: 8px;
+    transition: background 0.2s;
+    cursor: pointer;
+}
+
+#moderationList li:hover, #categoryList li:hover {
+    background-color: #f0f8ff;
+    
+}
+
+button {
+    padding: 6px 15px;
+    border: none;
+    border-radius: 6px;
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    font-size: clamp(1.6rem, 1.8vw, 2rem);
+    transition: background-color 0.2s;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+#newCategory {
+    padding: 6px;
+    font-size: clamp(1.6rem, 1.8vw, 2rem);
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    width: calc(100% - 120px);
+    max-width: 300px;
+}
+
+#addCategoryBtn {
+    padding: 6px 15px;
+    margin-left: 8px;
+}
+
+@media (max-width: 600px) {
+    header nav {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    #moderationList li, #categoryList li {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    #newCategory {
+        width: 100%;
+        margin-bottom: 8px;
+    }
+
+    #addCategoryBtn {
+        width: 100%;
+    }
+}

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>Graffiti részletek</title>
+<link rel="stylesheet" href="graffitiStyle.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+<nav id="home-button">
+  <a href="./">Főoldal</a>
+</nav>
+<div id="admin-actions"></div>
+<h1 id="title">Betöltés...</h1>
+<div id="category-display"></div>
+<div id="year-display"></div>
+<div id="images"></div>
+<div id="map"></div>
+
+<script type="module">
+import { supabase } from './supabaseClient.js';
+import * as L from 'https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.esm.js';
+
+// Ellenőrizzük, hogy admin-e a bejelentkezett felhasználó
+async function checkAdmin() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const { data, error } = await supabase
+    .from('admins')
+    .select('user_id')
+    .eq('user_id', user.id);
+
+  return data && data.length > 0;
+}
+
+async function loadDetail() {
+  const slug = new URLSearchParams(location.search).get('slug');
+  if (!slug) { document.body.innerText = 'Nincs megadva.'; return; }
+
+  const { data, error } = await supabase
+    .from('graffiti')
+    .select('id,name,image_path,latitude,longitude,year,category_id')
+    .eq('slug', slug)
+    .maybeSingle();
+
+  for (const catId of data.category_id || []) {
+    const { data: catData } = await supabase
+      .from('category')
+      .select('category_name')
+      .eq('id', catId)
+      .maybeSingle();
+    if (catData) {
+      const catDiv = document.getElementById('category-display');
+      const span = document.createElement('div');
+      span.innerText = catData.category_name;
+      span.className = 'category-badge';
+      catDiv.appendChild(span);
+    }
+  }
+
+  if (error || !data) { document.body.innerText = 'Nincs ilyen graffiti.'; return; }
+
+  document.getElementById('title').innerText = data.name;
+  document.getElementById('year-display').innerText = data.year ? `Év: ${data.year}` : '';
+
+  const imagesContainer = document.getElementById('images');
+  data.image_path.forEach(path => {
+    try {
+      const { data: publicUrlData } = supabase.storage
+        .from('graffiti-images')
+        .getPublicUrl(path);
+
+      const img = document.createElement('img');
+      img.src = publicUrlData.publicUrl;
+      img.style.maxWidth = '500px';
+      img.style.marginBottom = '10px';
+      imagesContainer.appendChild(img);
+    } catch (err) {
+      console.error('Hiba a képkérésnél:', err);
+    }
+  });
+
+  // Térkép inicializálása
+  if (data.latitude && data.longitude) {
+    const map = L.map('map').setView([data.latitude, data.longitude], 16);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    L.marker([data.latitude, data.longitude])
+      .addTo(map)
+      .bindPopup(data.name)
+      .openPopup();
+  }
+
+  // Admin akciók
+  const isAdmin = await checkAdmin();
+  if (isAdmin) {
+    const adminDiv = document.getElementById('admin-actions');
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.innerText = 'Graffiti törlése';
+    deleteBtn.id = 'deleteBtn';
+    deleteBtn.onclick = async () => {
+      if (!confirm('Biztosan törlöd ezt a graffitit és a hozzá tartozó képeket?')) return;
+
+      // Képek törlése a storage-ból
+      for (let path of data.image_path) {
+        const { error: delErr } = await supabase.storage
+          .from('graffiti-images')
+          .remove([path]);
+        if (delErr) console.error('Hiba a kép törlésénél:', delErr);
+      }
+
+      // Graffiti törlése az adatbázisból
+      const { error: dbErr } = await supabase
+        .from('graffiti')
+        .delete()
+        .eq('id', data.id);
+
+      if (dbErr) {
+        alert('Hiba a graffiti törlésekor: ' + dbErr.message);
+      } else {
+        alert('Sikeres törlés.');
+        location.href = '/';
+      }
+    };
+
+    adminDiv.appendChild(deleteBtn);
+  }
+}
+
+window.addEventListener('DOMContentLoaded', loadDetail);
+</script>
+
+</body>
+</html>

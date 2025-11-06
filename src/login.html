@@ -45,12 +45,12 @@ async function login(e) {
   console.log('Admin check:', admin);
   if (!admin) {
     alert('Nincs admin jogosultságod.');
-    location.href = '/';
+    location.href = './';
     return;
   }
 
   // sikeres login, átirányítás az upload oldalra
-  location.href = '/';
+  location.href = './';
 }
 
 window.login = login;

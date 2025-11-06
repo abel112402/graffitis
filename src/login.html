@@ -50,7 +50,8 @@ async function login(e) {
   }
 
   // sikeres login, átirányítás az upload oldalra
-  location.href = './';
+  console.log(new URL('./', location.href).href);
+  //location.href = './';
 }
 
 window.login = login;

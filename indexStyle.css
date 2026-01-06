@@ -47,12 +47,8 @@ html {
   cursor: pointer;
 }
 
-filter-btn span {
+.filter-btn span {
     cursor: pointer;
-}
-
-.filter-btn:hover {
-    
 }
 
 .filter-btn.active-filter {
@@ -158,12 +154,28 @@ button.clear-filters:hover {
     flex-direction: column;
   }
   #main-container-left {
+    margin-top: 5%;
     width: 100%;
+    min-width: 180px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+    color: #4b4b4b;
   }
   #main-container-right {
     margin-top: 20px;
   }
+  #year-list, #city-list, #category-list, #city-list h3, #category-list h3 {
+    flex: 1;
+    margin-top: 0;
+  }
+  #clear-filters {
+    width: 100%;
+    text-align: center;
+  }
 }
 
 @media (max-width: 600px) {
+  
 }

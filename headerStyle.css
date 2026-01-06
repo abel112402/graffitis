@@ -1,97 +1,138 @@
+/* --- ALAP BEÁLLÍTÁSOK (Desktop) --- */
 header {
   display: block;
-  padding: 20px;
-  padding-top: 10px;
+  padding: 20px 20px 0 20px; /* Egyszerűsített padding */
+  box-sizing: border-box; /* Fontos: a padding ne növelje a szélességet */
+  width: 100%;
+  overflow-x: hidden; /* Megakadályozza a vízszintes görgetést */
 }
+
+/* Felső sáv (Bal és Jobb oldal) */
 #nav-upper {
-  width: 97%;
+  width: 100%;
   display: flex;
+  justify-content: space-between; /* Széthúzza a két oldalt */
+  align-items: center; /* Függőlegesen középre igazít */
+  gap: 20px; /* Térköz a bal és jobb blokk között */
 }
-#nav-upper-left {
-  flex: 1;
-  justify-content: center;
-  display: flex;
-}
+
+#nav-upper-left, 
 #nav-upper-right {
-  flex: 1;
+  flex: 1; /* Egyenlő arányban osztoznak a helyen */
   display: flex;
   justify-content: center;
+  gap: 15px; /* Gombok közötti térköz */
 }
+
+/* Alsó sáv (Feltöltés gomb) */
 #nav-lower {
   width: 100%;
   display: flex;
-  justify-content: end;
+  justify-content: flex-end; /* Jobbra igazítás alapból */
+  margin-top: 20px; /* Százalék helyett fix pixel vagy rem jobb */
+  padding-right: 20px; /* Hogy ne tapadjon a szélére */
+  box-sizing: border-box;
 }
-#nav-lower {
-  width: 97%;
-  margin-top: 4%;
-}
+
+/* Gomb konténerek */
 .nav-button {
-  width: 30%;
+  /* A fix 30% helyett hagyjuk, hogy a tartalom határozza meg, 
+     de flexboxban rugalmasan viselkedjen */
+  flex: 0 1 auto; 
+  display: flex;
+  justify-content: center;
 }
-nav a{
-  flex: 1;
+
+/* Link stílusok */
+nav a {
   text-decoration: none;
   color: #737373;
   font-size: 1.8rem;
   font-weight: 400;
   display: inline-block;
-  padding: 6px 15px; 
+  padding: 6px 15px;
   border-radius: 5px;
-  margin-right: 10px;
   cursor: pointer;
-  transition: all 0.5s ease;
-  transform: scaleY(0.8);
+  transition: all 0.3s ease;
+  transform: scaleY(0.8); /* A te stílusod megtartva */
+  white-space: nowrap; /* Ne törjön sort a szöveg a gombon belül */
 }
-#upload-button a{
+
+/* Feltöltés gomb specifikus stílus */
+#upload-button nav a {
   color: black;
   font-size: 3.5rem;
   transform: scaleY(0.75) scaleX(1.2);
+  transform-origin: right center; /* Hogy ne lógjon ki jobbra scalingnél */
 }
+
 nav a:hover {
   text-decoration: underline;
-}
-#main-title {
-  font-size: clamp(2.5rem, 4vw, 3.5rem);
-  margin-bottom: 20px;
+  color: #333; /* Sötétebb szín hoverre */
 }
 
-#list h3 {
-  margin-top: 30px;
-  font-size: 2rem;
-  border-bottom: 2px solid #333;
-  padding-bottom: 5px;
-}
+/* --- RESZPONZÍV BEÁLLÍTÁSOK --- */
 
-#list ul {
-  list-style-type: none;
-  padding-left: 0;
-  font-size: 1.5rem;
-}
-
+/* 1. TABLET NÉZET (900px alatt) */
 @media (max-width: 900px) {
-  header {
-    flex-wrap: wrap;
-    justify-content: center;
+  #nav-upper {
+    flex-wrap: wrap; /* Engedi, hogy ha nem férnek el, új sorba essenek */
+    gap: 10px;
+  }
+  
+  nav a {
+    font-size: 1.5rem; /* Kicsit kisebb betűk */
+    padding: 5px 10px;
   }
 
-  nav a {
-    font-size: clamp(2.5rem, 4vw, 3rem);
-    margin-bottom: 10px;
+  #upload-button nav a {
+    font-size: 2.5rem; /* A feltöltés gomb is kisebb legyen */
   }
 }
 
+/* 2. MOBIL NÉZET (600px alatt) */
 @media (max-width: 600px) {
   header {
-    flex-direction: column;
-    align-items: center;
+    padding: 10px;
+  }
+
+  /* A felső sáv elemei kerüljenek egymás alá */
+  #nav-upper {
+    flex-direction: column; 
+    gap: 15px;
+  }
+
+  /* A bal és jobb oldali blokkok teljes szélességűek */
+  #nav-upper-left,
+  #nav-upper-right {
+    width: 100%;
+    flex-wrap: wrap; /* Ha sok gomb van, törjenek sorba */
+    gap: 10px;
+  }
+
+  /* A gombok töltsék ki a helyet mobilon */
+  .nav-button {
+    flex: 1 1 40%; /* Minimum 40%-os szélesség, de nőhetnek */
   }
 
   nav a {
-    width: 90%;
-    display: block;
+    width: 100%;
     text-align: center;
-    font-size: clamp(3rem, 6vw, 4rem);
-    margin-bottom: 10px;
+    font-size: 1.6rem; /* Olvasható méret */
+    display: block; /* Teljes szélességű kattintható terület */
+    margin: 0;
+  }
+
+  /* Az alsó sáv (feltöltés) középre kerüljön mobilon */
+  #nav-lower {
+    justify-content: center;
+    padding-right: 0;
+    margin-top: 30px;
+  }
+
+  #upload-button nav a {
+    font-size: 2.8rem; /* Mobilon is legyen nagy, de ne óriás */
+    transform: scaleY(0.8); /* Kevésbé torzítva mobilon */
+    transform-origin: center;
   }
 }

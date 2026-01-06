@@ -8,15 +8,14 @@
 }
 
 html {
-  font-family: "Courier Prime", monospace;
-  font-optical-sizing: auto;
-  font-weight: 400;
+  font-family: Helvetica, Arial, sans-serif;
+    font-weight: 300;
   font-style: normal;
   background-color: rgb(230, 230, 230);
 }
 
 body {
-  color: rgb(103, 103, 103);
+  color: #4b4b4b;
   line-height: 1.6;
   padding: 20px;
 }
@@ -96,7 +95,14 @@ input[type="file"]:focus {
 .add-category {
   width: 100%;
 }
-
+#add-category-btn, #category-select-btn{
+  font-size: 1.4rem;
+  font-weight: 500;
+  width: 6.5%;
+  color: rgb(104, 104, 104);
+  border: 2px solid rgb(104, 104, 104);
+  border-radius: 5px;
+}
 button[type="submit"] {
   padding: 12px 20px;
   font-size: 1.1rem;

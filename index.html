@@ -6,7 +6,12 @@
 <link rel="stylesheet" href="headerStyle.css">
 <link rel="stylesheet" href="indexStyle.css">
 <title>Kezdőlap</title>
-
+<style>
+  /* Apró kiegészítés, hogy a lista nézetben a sima elemek között legyen egy kis térköz */
+  .simple-item {
+    margin-bottom: 5px;
+  }
+</style>
 </head>
 <body>
 <header></header>
@@ -30,8 +35,7 @@
   </div>
 
   <div id="main-container-right">
-    <!-- Itt jelennek meg a grafittik letter-group blokkokban -->
-  </div>
+    </div>
 </div>
 
 <script type="module">
@@ -47,12 +51,14 @@ window.logout = async function logout() {
 let graffitiData = [];
 let categoryMap = {};
 let activeFilters = { year: null, city: null, category: [] };
+// Új változó a nézet módjának tárolására: 'alphabetical' | 'random' | 'latest'
+let currentMode = 'alphabetical';
 
 async function loadIndex() {
-  // Graffiti adatok lekérése
+  // Graffiti adatok lekérése - HOZZÁADVA: created_at
   const { data, error } = await supabase
     .from('graffiti')
-    .select('id,name,slug,year,city,category_id')
+    .select('id,name,slug,year,city,category_id,created_at')
     .eq('accepted', true)
     .order('name', { ascending: true });
 
@@ -118,31 +124,84 @@ async function loadIndex() {
   document.getElementById('clear-filters').addEventListener('click', () => {
     activeFilters = { year:null, city:null, category:[] };
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active-filter'));
-    renderList(graffitiData);
+    // Visszaállunk ABC sorrendre is alaphelyzetben? 
+    // Ha nem, akkor csak az applyFilters()-t hívjuk. 
+    // Itt most a filter törlés visszaállítja a módot.
+    currentMode = 'alphabetical';
+    applyFilters();
   });
 
-  renderList(graffitiData);
+  // Kezdő renderelés
+  applyFilters();
 
   // Header nav gombok
+  const navUpper = document.createElement('div');
+  navUpper.id = 'nav-upper';
+  const navUpperLeft = document.createElement('div');
+  navUpperLeft.id = 'nav-upper-left';
+  const navUpperRight = document.createElement('div');
+  navUpperRight.id = 'nav-upper-right';
+  navUpper.appendChild(navUpperLeft);
+  navUpper.appendChild(navUpperRight);
+  const navLower = document.createElement('div');
+  navLower.id = 'nav-lower';
+
   const adminLoggedIn = await isAdmin();
+
+  const randomButton = document.createElement('div');
+  randomButton.classList.add('nav-button');
+  // Bekötjük az új függvényt
+  randomButton.innerHTML = '<nav><a onclick="setRandomMode()">véletlenszerű</a></nav>';
+  navUpperLeft.appendChild(randomButton);
+
+  const lastButton = document.createElement('div');
+  // Bekötjük az új függvényt
+  lastButton.classList.add('nav-button');
+  lastButton.innerHTML = '<nav><a onclick="setLastMode()">legutóbbi</a></nav>';
+  navUpperLeft.appendChild(lastButton);
+
+  const whatButton = document.createElement('div');
+  whatButton.classList.add('nav-button');
+  whatButton.innerHTML = '<nav><a onclick="">mi ez</a></nav>';
+  navUpperRight.appendChild(whatButton);
+
+  const whoButton = document.createElement('div');
+  whoButton.classList.add('nav-button');
+  whoButton.innerHTML = '<nav><a onclick="">ki ez</a></nav>';
+  navUpperRight.appendChild(whoButton);
+
   if (!adminLoggedIn) {
     const loginButton = document.createElement('div');
     loginButton.innerHTML = '<nav><a href="./login.html">Admin Bejelentkezés</a></nav>';
-    document.querySelector('header').appendChild(loginButton);
+    navUpper.appendChild(loginButton);
   } else {
     const adminProfile = document.createElement('div');
     adminProfile.innerHTML = '<nav><a href="./admin.html">Admin Oldal</a></nav>';
-    document.querySelector('header').appendChild(adminProfile);
+    navUpper.appendChild(adminProfile);
 
     const logoutButton = document.createElement('div');
     logoutButton.innerHTML = '<nav><a onclick="logout()">Kijelentkezés</a></nav>';
-    document.querySelector('header').appendChild(logoutButton);
+    navUpper.appendChild(logoutButton);
   }
 
   const uploadButton = document.createElement('div');
   uploadButton.id = 'upload-button';
-  uploadButton.innerHTML = '<nav><a href="./upload.html">Graffiti Feltöltés</a></nav>';
-  document.querySelector('header').appendChild(uploadButton);
+  uploadButton.innerHTML = '<nav><a href="./upload.html">feltöltés</a></nav>';
+  navLower.appendChild(uploadButton);
+
+  document.querySelector('header').appendChild(navUpper);
+  document.querySelector('header').appendChild(navLower);
+}
+
+// Globális függvények a gombokhoz
+window.setRandomMode = function() {
+  currentMode = 'random';
+  applyFilters(); // Újra renderel a jelenlegi szűrőkkel, de random sorrendben
+}
+
+window.setLastMode = function() {
+  currentMode = 'latest';
+  applyFilters(); // Újra renderel a jelenlegi szűrőkkel, de időrendben
 }
 
 function handleFilterClick(e) {
@@ -169,6 +228,11 @@ function handleFilterClick(e) {
     }
   }
 
+  applyFilters();
+}
+
+// Új segédfüggvény a szűrés és renderelés összekötésére
+function applyFilters() {
   const filtered = graffitiData.filter(g => {
     const matchesYear = !activeFilters.year || g.year == activeFilters.year;
     const matchesCity = !activeFilters.city || g.city == activeFilters.city;
@@ -185,87 +249,85 @@ function handleFilterClick(e) {
   renderList(filtered);
 }
 
-function adjustGridColumns() {
-  const container = document.getElementById('main-container-right');
-  const groups = Array.from(container.querySelectorAll('.letter-group'));
-  if (!groups.length) return;
-
-  const containerWidth = container.clientWidth;
-  const maxGroupWidth = Math.max(...groups.map(g => g.getBoundingClientRect().width));
-
-  // hány oszlop fér el ténylegesen
-  const maxPossibleCols = Math.min(groups.length, Math.floor(containerWidth / maxGroupWidth) || 1);
-
-  const rows = Math.ceil(groups.length / maxPossibleCols);
-
-  // remove everything
-  container.innerHTML = '';
-
-  // create columns dynamically (csak amennyi kell)
-  const columns = Array.from({ length: maxPossibleCols }, () => {
-    const col = document.createElement('div');
-    col.style.display = 'flex';
-    col.style.flexDirection = 'column';
-    col.style.gap = '20px';
-    col.style.flex = '1'; // kitölti a szélességet
-    container.appendChild(col);
-    return col;
-  });
-
-  // column-first elrendezés
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < maxPossibleCols; col++) {
-      const index = row + col * rows;
-      if (index < groups.length) {
-        columns[col].appendChild(groups[index]);
-      }
-    }
-  }
-}
-
 function renderList(list) {
     const container = document.getElementById('main-container-right');
     container.innerHTML = '';
+    
+    // Elemek, amiket majd az oszlopelosztónak adunk át (lehet letter-group vagy sima div)
+    let itemsToDistribute = [];
 
-    // Csoportosítás kezdőbetű szerint
-    const groups = {};
-    list.forEach(g => {
-      const letter = (g.name || '?').trim().charAt(0).toUpperCase();
-      (groups[letter] ||= []).push(g);
-    });
+    // 1. ESET: ABC sorrend (Letter Groupokkal)
+    if (currentMode === 'alphabetical') {
+        // Alapból név szerint rendezzük (bár az SQL is így adja, de a szűrés miatt biztosra megyünk)
+        list.sort((a, b) => a.name.localeCompare(b.name, 'hu', { sensitivity: 'base' }));
 
-    const sortedLetters = Object.keys(groups)
-      .sort((a, b) => a.localeCompare(b, 'hu', { sensitivity: 'base' }));
+        const groups = {};
+        list.forEach(g => {
+            const letter = (g.name || '?').trim().charAt(0).toLowerCase();
+            (groups[letter] ||= []).push(g);
+        });
 
-    // Készítsünk letter-group div-eket
-    const letterDivs = sortedLetters.map(letter => {
-      const groupDiv = document.createElement('div');
-      groupDiv.classList.add('letter-group');
+        const sortedLetters = Object.keys(groups)
+            .sort((a, b) => a.localeCompare(b, 'hu', { sensitivity: 'base' }));
 
-      const h3 = document.createElement('h3');
-      h3.innerText = letter;
-      groupDiv.appendChild(h3);
-      const hr = document.createElement('hr');
-      hr.classList.add('letter-separator');
-      groupDiv.appendChild(hr);
+        itemsToDistribute = sortedLetters.map(letter => {
+            const groupDiv = document.createElement('div');
+            groupDiv.classList.add('letter-group');
 
-      const ul = document.createElement('ul');
-      groups[letter].forEach(item => {
-        const li = document.createElement('li');
-        const a = document.createElement('a');
-        a.href = `graffiti.html?slug=${encodeURIComponent(item.slug)}`;
-        a.innerText = item.name;
-        li.appendChild(a);
-        ul.appendChild(li);
-      });
+            const h3 = document.createElement('h3');
+            h3.innerText = letter;
+            groupDiv.appendChild(h3);
 
-      groupDiv.appendChild(ul);
-      return groupDiv;
-    });
+            const ul = document.createElement('ul');
+            groups[letter].forEach(item => {
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                a.href = `graffiti.html?slug=${encodeURIComponent(item.slug)}`;
+                a.innerText = item.name;
+                li.appendChild(a);
+                ul.appendChild(li);
+            });
 
-    // Szétosztjuk oszlopokba
-    distributeColumns(letterDivs, container);
-  }
+            groupDiv.appendChild(ul);
+            return groupDiv;
+        });
+
+    } 
+    // 2. ESET: Véletlenszerű vagy Legutóbbi (Nincs Letter Group)
+    else {
+        // Másolat készítése, hogy ne az eredeti tömböt rendezzük át
+        let displayList = [...list];
+
+        if (currentMode === 'random') {
+            // Fisher-Yates shuffle vagy egyszerű random sort
+            displayList.sort(() => Math.random() - 0.5);
+        } else if (currentMode === 'latest') {
+            // Dátum szerinti csökkenő sorrend
+            displayList.sort((a, b) => {
+                const dateA = new Date(a.created_at);
+                const dateB = new Date(b.created_at);
+                return dateB - dateA; // Legújabb elől
+            });
+        }
+
+        // Sima DIV-ek gyártása az oszlopelosztónak
+        itemsToDistribute = displayList.map(item => {
+            const div = document.createElement('div');
+            div.classList.add('simple-item'); // CSS-ben formázható ha kell
+            
+            const a = document.createElement('a');
+            a.href = `graffiti.html?slug=${encodeURIComponent(item.slug)}`;
+            a.innerText = item.name;
+            a.style.display = 'block'; // Hogy új sorba kerüljön
+            
+            div.appendChild(a);
+            return div;
+        });
+    }
+
+    // Szétosztjuk oszlopokba a generált elemeket
+    distributeColumns(itemsToDistribute, container);
+}
 
 function distributeColumns(divs, container) {
   container.innerHTML = '';
@@ -274,7 +336,6 @@ function distributeColumns(divs, container) {
   const containerWidth = container.clientWidth;
   if (containerWidth === 0) return;
 
-  // ideiglenes mérés: appendoljuk, hogy megkapjuk a pontos szélességeket
   const tempWrapper = document.createElement('div');
   tempWrapper.style.visibility = 'hidden';
   tempWrapper.style.position = 'absolute';
@@ -289,23 +350,20 @@ function distributeColumns(divs, container) {
 
   document.body.removeChild(tempWrapper);
 
-  // padding/puffer minden oszlophoz (pl. padding + belső space)
-  const COL_GAP = 6; // px, oszlopok közötti távolság
-  const EXTRA = 20;   // px puffer minden oszlophoz (paddingok miatt)
+  const COL_GAP = 6; 
+  const EXTRA = 20; 
 
-  // Minden divhez a szükséges min-width (linkek szélessége + EXTRA)
   const minWidths = widths.map(w => w + EXTRA);
 
-  // Próbáljuk meg a legnagyobb colCount-ot, amivel elférnek a min-width-ek
-  // legfeljebb divs.length oszlop lehet
   let bestColCount = 1;
-  for (let c = Math.min(divs.length, 12); c >= 1; c--) { // 12 korlát pl. ne legyen nagyon nagy
-    // oszloponként hogyan osztanánk? column-first, rows = ceil(n / c)
+  // Kicsit növeljük a max oszlophatárt, ha sok kicsi elem van (pl. random nézetben)
+  const maxCalcCols = currentMode === 'alphabetical' ? 7 : 20;
+
+  for (let c = Math.min(divs.length, maxCalcCols); c >= 1; c--) { 
     const rows = Math.ceil(divs.length / c);
-    // kiszámoljuk minden oszlop min szélességét (max az adott oszlop elemei között)
     const colMinWidths = new Array(c).fill(0);
     for (let i = 0; i < divs.length; i++) {
-      const colIndex = Math.floor(i / rows); // column-first index map
+      const colIndex = Math.floor(i / rows); 
       if (colIndex < c) {
         colMinWidths[colIndex] = Math.max(colMinWidths[colIndex] || 0, minWidths[i]);
       }
@@ -320,21 +378,19 @@ function distributeColumns(divs, container) {
   const colCount = bestColCount;
   const rows = Math.ceil(divs.length / colCount);
 
-  // készítsük el az oszlopokat
   const columns = Array.from({ length: colCount }, () => {
     const col = document.createElement('div');
     col.className = 'generated-column';
-    // flex beállítás: engedjük növekedni, de ne zsugorodjon a min-width alá
     col.style.display = 'flex';
     col.style.flexDirection = 'column';
-    col.style.gap = '16px';
+    // Ha nem letter group, hanem sima lista, kisebb gap is elég
+    col.style.gap = currentMode === 'alphabetical' ? '16px' : '5px';
     col.style.flex = '1 1 auto';
     col.style.alignItems = 'flex-start';
     container.appendChild(col);
     return col;
   });
 
-  // column-first feltöltés (ABC oszloponként)
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < colCount; col++) {
       const index = row + col * rows;
@@ -344,7 +400,6 @@ function distributeColumns(divs, container) {
     }
   }
 
-  // minden oszlophoz állapítsuk meg a min-width-et (benne a leghosszabb elem alapján)
   const colMinWidths = columns.map(col => {
     if (col.children.length === 0) return 0;
     let maxItem = 0;
@@ -353,22 +408,20 @@ function distributeColumns(divs, container) {
       if (w > maxItem) maxItem = w;
     });
     for (let letterSep of col.querySelectorAll('.letter-group .letter-separator')) {
-      letterSep.style.width = `${col.getBoundingClientRect().width}px`;
-   }
+       letterSep.style.width = `${col.getBoundingClientRect().width}px`;
+    }
     return Math.ceil(maxItem + EXTRA);
   });
 
-  // állítsuk be a min-width-et minden oszlopra, és flex-grow megtartása
   columns.forEach((col, i) => {
     if (colMinWidths[i] === 0) {
       col.style.display = 'none';
       return;
     }
     col.style.minWidth = `${colMinWidths[i]}px`;
-    col.style.flex = '1 1 auto'; // kitölti a maradékot, de nem lesz kisebb mint minWidth
+    col.style.flex = '1 1 auto'; 
   });
 
-  // konténer stílus
   container.style.display = 'flex';
   container.style.gap = `${COL_GAP}px`;
   container.style.flexWrap = 'wrap';
@@ -376,13 +429,9 @@ function distributeColumns(divs, container) {
   container.style.justifyContent = 'flex-start';
 }
 
-
-
-
-
   window.addEventListener('DOMContentLoaded', loadIndex);
   window.addEventListener('resize', () => {
-    if (graffitiData.length) renderList(graffitiData);
+    if (graffitiData.length) applyFilters(); // Itt is applyFilters-t hívunk renderList helyett
   });
 </script>
 </body>

@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="headerStyle.css">
 <link rel="stylesheet" href="adminStyle.css">
+<link rel="stylesheet" href="headerStyle.css">
 <title>Admin oldal</title>
 </head>
 
@@ -37,10 +37,15 @@ window.logout = async function logout() {
 
 const header = document.querySelector('header');
 header.innerHTML = `
+<div id="nav-upper">
+  <div id="nav-upper-left"></div>
+  <div id="nav-upper-right"></div>
   <nav><a href="./">Főoldal</a></nav>
   <nav><a href="./" onclick="logout()">Kijelentkezés</a></nav>
-  <nav id="upload-button"><a href="./upload.html">Graffiti Feltöltés</a></nav>
-</nav>
+</div>
+<div id="nav-lower">
+  <nav id="upload-button"><a href="./upload.html">feltöltés</a></nav>
+</div>
 `;
 
 const adminLoggedIn = await isAdmin();

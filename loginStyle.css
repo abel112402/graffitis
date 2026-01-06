@@ -8,13 +8,11 @@ body {
     justify-content: center;
 }
 html{
-    font-family: "Courier Prime", monospace;
-    font-optical-sizing: auto;
-    font-weight: 400;
+    font-family: Helvetica, Arial, sans-serif;
+    font-weight: 300;
     font-style: normal;
     height: 100vh;
     overflow: hidden;
-    background-color: rgb(230, 230, 230);
 }
 h1 {
     font-size: 4rem;

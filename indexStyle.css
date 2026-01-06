@@ -1,14 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,200..900;1,7..72,200..900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 html {
-  font-family: "Courier Prime", monospace;
+  font-family: Helvetica, Arial, sans-serif;
+  font-weight: 300;
   font-optical-sizing: auto;
-  font-weight: 400;
   font-style: normal;
   font-size: 10px;
   margin: 20px;
   margin-top: 0;
-  background-color: rgb(230, 230, 230);
 }
 
 /* Konténer felépítés */
@@ -21,24 +20,26 @@ html {
 
 /* Bal oldali szűrők */
 #main-container-left {
-  width: 20vw;
+  margin-top: 5%;
+  width: 17vw;
   min-width: 180px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0px;
+  color: #4b4b4b;
 }
 
 #main-container-left h3 {
-  font-size: 2.5rem;
-  color: rgb(103, 103, 103);
-  font-weight: 700;
+  font-size: 1.7rem;
+  color: #4b4b4b;
+  font-weight: 300;
   margin-bottom: 0;
 }
 
 .filter-btn {
   font-size: 1.7rem;
   display: block;
-  margin: 4px 0;
+  margin: 0;
   padding: 0;
   border-radius: 4px;
   text-align: left;
@@ -59,18 +60,23 @@ filter-btn span {
 }
 
 button.clear-filters {
+  font-size: 1.7rem;
   margin-top: 10px;
-  padding: 6px 8px;
+  padding: 8px 12px 8px 12px;
+  margin-left: -12px;
   cursor: pointer;
-  background: #dc3545;
-  color: white;
-  border: none;
+  color: #4b4b4b;
+  background-color: white;
+  border: 0 solid #4b4b4b;
   border-radius: 4px;
   transition: background-color 0.3s ease;
+  text-decoration: underline;
+  text-align: left;
+  width: fit-content;
 }
 
 button.clear-filters:hover {
-  background: #a71d2a;
+  background: #c4c4c4;
 }
 
 #city-list h3, #category-list h3 {
@@ -102,24 +108,25 @@ button.clear-filters:hover {
 .letter-group { /* a belső blokkok */
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0;
   break-inside: avoid;
 }
 .letter-group a { white-space: nowrap; } /* a nevek egy sorban maradjanak */
-
+/*
 .letter-separator {
     border: none;  
     border-top: 1px dashed rgb(103, 103, 103); 
     height: 0;
     margin: 1px 0;  
 }
-
+*/
 .letter-group h3 {
-  margin: 0 0 6px 0;
-  font-size: 2.5rem;
-  font-weight: 700;
+  margin: 0;
+  font-size: 1.7rem;
+  font-weight: 300;
   padding-left: 0;
-  color: rgb(103, 103, 103);
+  color: #4b4b4b;
+  text-decoration: underline;
 }
 
 .letter-group ul {
@@ -128,15 +135,14 @@ button.clear-filters:hover {
   margin: 0;
 }
 
-.letter-group ul li a {
+.simple-item a, .letter-group ul li a {
   font-size: 1.7rem;
   text-decoration: none;
-  color: #333;
-  margin-bottom: 5px;
+  color: #4b4b4b;
   white-space: nowrap;
 }
 
-.letter-group ul li a:hover {
+.simple-item a:hover, .letter-group ul li a:hover {
   font-weight: 600;
 }
 

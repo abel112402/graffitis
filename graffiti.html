@@ -13,15 +13,12 @@
 </nav>
 
 <div id="admin-actions"></div>
-
-<h1 id="title">Betöltés...</h1>
-
-<div id="category-display"></div>
 <div id="images"></div>
-<div id="year-display"></div>
-<div id="address-display"></div>
-
-<div id="description-display" style="display: none;"></div>
+<div id="add-year-div"><div id="address-display"></div><div id="year-display"></div></div>
+<div id="category-display"></div>
+<div id="expand-div"><a id="expend-btn">...</a></div>
+<h1 id="title" class="hidden">Betöltés...</h1>
+<div id="description-display" class="hidden" style="display: none;"></div>
 
 
 
@@ -53,11 +50,11 @@ async function loadDetail() {
   if (error || !data) { document.body.innerText = 'Nincs ilyen graffiti.'; return; }
 
   // 1. Cím
-  const addressParts = [data.city, data.district, data.street].filter(Boolean);
+  const addressParts = [data.city, data.district, data.street].filter(Boolean).map(part => part.trim().toUpperCase());;
   const addressElement = document.getElementById('address-display');
   addressElement.textContent = addressParts.length > 0 
-    ? `📍 ${addressParts.join(', ')}` 
-    : '📍 Helyszín: Ismeretlen';
+    ? `${addressParts.join(', ')},` 
+    : 'Helyszín: Ismeretlen';
 
   // 2. Alapadatok
   document.getElementById('title').innerText = data.name;
@@ -82,7 +79,7 @@ async function loadDetail() {
       
       if (catData) {
         const span = document.createElement('span');
-        span.innerText = catData.category_name; 
+        span.innerText = catData.category_name.toLowerCase(); 
         span.className = 'category-badge';
         catDiv.appendChild(span);
       }
@@ -128,6 +125,22 @@ async function loadDetail() {
     };
     adminDiv.appendChild(deleteBtn);
   }
+
+  // Leírás megjelenítés gomb
+  const expandBtn = document.getElementById('expend-btn');
+  expandBtn.onclick = () => {
+    const descDiv = document.getElementById('description-display');
+    const titleEl = document.getElementById('title');
+    if (descDiv.classList.contains('hidden')) {
+      descDiv.classList.remove('hidden');
+      titleEl.classList.remove('hidden');
+      expandBtn.innerText = 'X';
+    } else {
+      descDiv.classList.add('hidden');
+      titleEl.classList.add('hidden');
+      expandBtn.innerText = '...';
+    }
+  };
 }
 
 // Külön függvény a képnyitáshoz a tisztább kódért

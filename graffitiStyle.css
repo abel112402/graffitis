@@ -19,7 +19,9 @@ body {
 .scroll-lock {
   overflow: hidden;
 }
-
+.hidden {
+  visibility:hidden;
+}
 * {
   font-family: "Courier Prime", monospace;
   box-sizing: border-box;
@@ -52,20 +54,19 @@ body {
 }
 
 h1 {
-  text-align: center;
-  margin-bottom: 15px;
-  font-weight: 600;
+  text-align: left;
+  font-weight: 400;
+  margin-top: 15px;
   color: #4b4b4b;
   /* Reszponzív betűméret: minimum 2.4rem, max 4.5rem */
-  font-size: clamp(2.4rem, 5vw, 4.5rem);
-  line-height: 1.2;
+  font-size: 1.4rem;
 }
 
 h2 {
-  font-weight: 500;
   margin-top: 10px;
   color: #555;
-  font-size: 2.4rem;
+  font-size: 1.4rem;
+  font-weight: 300;
 }
 
 /* --- Adatok kijelzése --- */
@@ -74,10 +75,23 @@ h2 {
   margin-bottom: 12px;
   color: #333;
 }
-
+#add-year-div{
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 2%;
+}
+#expand-div{
+  text-align: center;
+  margin-top: 10px;
+}
+#expend-btn{
+  font-size: 1.6rem;
+  color: #666;
+  cursor: pointer;
+}
 #category-display {
   text-align: center;
-  margin: 15px 0 25px 0;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -85,33 +99,33 @@ h2 {
 }
 
 .category-badge {
-  background-color: #eaeaea;
-  color: #555;
-  padding: 6px 12px;
+  padding: 0px 5px;
   border-radius: 20px;
-  font-size: 1.3rem;
-  font-weight: bold;
+  font-size: 1.4rem;
+  font-weight: normal;
+  margin-top: 1%;
 }
 
 #year-display {
-  font-size: clamp(2rem, 4vw, 3rem);
-  color: #444;
-  margin-top: 20px;
-  font-weight: bold;
+  text-align: center;
+  font-size: 1.6rem;
+  margin: 0;
+  padding: 0;
+  font-weight: normal;
 }
 
 #address-display {
-  font-style: italic;
-  margin-bottom: 20px;
+  text-align: center; 
 }
 
 #description-display {
-  margin: 20px 0;
+  text-align: left;
+  margin: 0px 0;
   padding: 15px;
   background-color: #f9f9f9;
   border-left: 4px solid #aaa;
   white-space: pre-wrap;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   line-height: 1.8;
 }
 
@@ -129,15 +143,14 @@ h2 {
   max-width: 500px;
   height: 300px;
   object-fit: cover; /* A képek egységes méretűek, levágással */
-  border-radius: 8px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  /*box-shadow: 0 4px 10px rgba(0,0,0,0.1);*/
   cursor: zoom-in;
   transition: transform 0.2s ease;
 }
 
 #images img:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+  /*box-shadow: 0 6px 15px rgba(0,0,0,0.15);*/
 }
 
 /* --- Admin Gomb --- */

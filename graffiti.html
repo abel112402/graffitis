@@ -2,31 +2,37 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Graffiti részletek</title>
 <link rel="stylesheet" href="graffitiStyle.css" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
+
 <nav id="home-button">
-  <a href="./">Főoldal</a>
+  <a href="./">← Vissza a főoldalra</a>
 </nav>
+
 <div id="admin-actions"></div>
+
 <h1 id="title">Betöltés...</h1>
+
 <div id="category-display"></div>
-<div id="year-display"></div>
 <div id="images"></div>
-<div id="map"></div>
+<div id="year-display"></div>
+<div id="address-display"></div>
+
+<div id="description-display" style="display: none;"></div>
+
+
 
 <script type="module">
 import { supabase } from './supabaseClient.js';
-import * as L from 'https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.esm.js';
 
-// Ellenőrizzük, hogy admin-e a bejelentkezett felhasználó
 async function checkAdmin() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return false;
 
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from('admins')
     .select('user_id')
     .eq('user_id', user.id);
@@ -40,94 +46,103 @@ async function loadDetail() {
 
   const { data, error } = await supabase
     .from('graffiti')
-    .select('id,name,image_path,latitude,longitude,year,category_id')
+    .select('id, name, image_path, year, category_id, city, district, street, description')
     .eq('slug', slug)
     .maybeSingle();
 
-  for (const catId of data.category_id || []) {
-    const { data: catData } = await supabase
-      .from('category')
-      .select('category_name')
-      .eq('id', catId)
-      .maybeSingle();
-    if (catData) {
-      const catDiv = document.getElementById('category-display');
-      const span = document.createElement('div');
-      span.innerText = catData.category_name;
-      span.className = 'category-badge';
-      catDiv.appendChild(span);
+  if (error || !data) { document.body.innerText = 'Nincs ilyen graffiti.'; return; }
+
+  // 1. Cím
+  const addressParts = [data.city, data.district, data.street].filter(Boolean);
+  const addressElement = document.getElementById('address-display');
+  addressElement.textContent = addressParts.length > 0 
+    ? `📍 ${addressParts.join(', ')}` 
+    : '📍 Helyszín: Ismeretlen';
+
+  // 2. Alapadatok
+  document.getElementById('title').innerText = data.name;
+  document.getElementById('year-display').innerText = data.year ? `${data.year}` : '';
+
+  // 3. Leírás
+  if (data.description) {
+    const descDiv = document.getElementById('description-display');
+    descDiv.style.display = 'block';
+    descDiv.textContent = data.description;
+  }
+
+  // 4. Kategóriák
+  const catDiv = document.getElementById('category-display');
+  if (data.category_id) {
+    for (const catId of data.category_id) {
+      const { data: catData } = await supabase
+        .from('category')
+        .select('category_name')
+        .eq('id', catId)
+        .maybeSingle();
+      
+      if (catData) {
+        const span = document.createElement('span');
+        span.innerText = catData.category_name; 
+        span.className = 'category-badge';
+        catDiv.appendChild(span);
+      }
     }
   }
 
-  if (error || !data) { document.body.innerText = 'Nincs ilyen graffiti.'; return; }
-
-  document.getElementById('title').innerText = data.name;
-  document.getElementById('year-display').innerText = data.year ? `Év: ${data.year}` : '';
-
+  // 5. Képek betöltése
   const imagesContainer = document.getElementById('images');
-  data.image_path.forEach(path => {
-    try {
+  
+  if (data.image_path && data.image_path.length > 0) {
+    data.image_path.forEach(path => {
       const { data: publicUrlData } = supabase.storage
         .from('graffiti-images')
         .getPublicUrl(path);
 
       const img = document.createElement('img');
       img.src = publicUrlData.publicUrl;
-      img.style.maxWidth = '500px';
-      img.style.marginBottom = '10px';
+      // Klikk esemény közvetlenül a létrehozáskor
+      img.addEventListener('click', toggleImageSize);
       imagesContainer.appendChild(img);
-    } catch (err) {
-      console.error('Hiba a képkérésnél:', err);
-    }
-  });
-
-  // Térkép inicializálása
-  if (data.latitude && data.longitude) {
-    const map = L.map('map').setView([data.latitude, data.longitude], 16);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-
-    L.marker([data.latitude, data.longitude])
-      .addTo(map)
-      .bindPopup(data.name)
-      .openPopup();
+    });
+  } else {
+    imagesContainer.innerText = "Nincs feltöltött kép.";
   }
 
-  // Admin akciók
+  // Admin funkciók
   const isAdmin = await checkAdmin();
   if (isAdmin) {
     const adminDiv = document.getElementById('admin-actions');
-
     const deleteBtn = document.createElement('button');
-    deleteBtn.innerText = 'Graffiti törlése';
-    deleteBtn.id = 'deleteBtn';
+    deleteBtn.innerText = '🗑️';
+    
     deleteBtn.onclick = async () => {
-      if (!confirm('Biztosan törlöd ezt a graffitit és a hozzá tartozó képeket?')) return;
-
-      // Képek törlése a storage-ból
-      for (let path of data.image_path) {
-        const { error: delErr } = await supabase.storage
-          .from('graffiti-images')
-          .remove([path]);
-        if (delErr) console.error('Hiba a kép törlésénél:', delErr);
+      if (!confirm('Biztosan törlöd? Ez nem vonható vissza.')) return;
+      
+      if (data.image_path && data.image_path.length > 0) {
+          await supabase.storage.from('graffiti-images').remove(data.image_path);
       }
+      const { error: dbErr } = await supabase.from('graffiti').delete().eq('id', data.id);
 
-      // Graffiti törlése az adatbázisból
-      const { error: dbErr } = await supabase
-        .from('graffiti')
-        .delete()
-        .eq('id', data.id);
-
-      if (dbErr) {
-        alert('Hiba a graffiti törlésekor: ' + dbErr.message);
-      } else {
-        alert('Sikeres törlés.');
-        location.href = '/';
-      }
+      if (dbErr) alert('Hiba: ' + dbErr.message);
+      else { alert('Törölve.'); location.href = '/graffitis/index.html'; }
     };
-
     adminDiv.appendChild(deleteBtn);
+  }
+}
+
+// Külön függvény a képnyitáshoz a tisztább kódért
+function toggleImageSize(e) {
+  const img = e.target;
+  const isEnlarged = img.classList.contains('enlarged');
+  
+  if (isEnlarged) {
+    // Bezárás
+    img.classList.remove('enlarged');
+    document.body.classList.remove('scroll-lock');
+  } else {
+    // Kinyitás
+    img.classList.add('enlarged');
+    document.body.classList.add('scroll-lock');
   }
 }
 

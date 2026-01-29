@@ -1,16 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,200..900;1,7..72,200..900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
 html {
   font-family: Helvetica, Arial, sans-serif;
   font-weight: 300;
-  font-optical-sizing: auto;
-  font-style: normal;
   font-size: 10px;
   margin: 20px;
   margin-top: 0;
 }
 
-/* Konténer felépítés */
 #main-container {
   display: flex;
   gap: 20px;
@@ -18,9 +16,9 @@ html {
   box-sizing: border-box;
 }
 
-/* Bal oldali szűrők */
+/* Bal oldal maradt a régi */
 #main-container-left {
-  margin-top: 5%;
+  margin-top: 0;
   width: 17vw;
   min-width: 180px;
   display: flex;
@@ -30,99 +28,66 @@ html {
 }
 
 #main-container-left h3 {
-  font-size: 1.7rem;
+  font-size: 1.5rem;
   color: #4b4b4b;
   font-weight: 300;
   margin-bottom: 0;
 }
 
 .filter-btn {
-  font-size: 1.7rem;
+  font-size: 1.5rem;
   display: block;
-  margin: 0;
-  padding: 0;
-  border-radius: 4px;
-  text-align: left;
-  transition: background-color 0.2s ease;
   cursor: pointer;
+  transition: background-color 0.2s ease;
 }
-
-.filter-btn span {
-    cursor: pointer;
-}
-
 .filter-btn.active-filter {
   text-decoration: underline;
 }
 
-button.clear-filters {
-  font-size: 1.7rem;
-  margin-top: 10px;
-  padding: 8px 12px 8px 12px;
-  margin-left: -12px;
-  cursor: pointer;
-  color: #4b4b4b;
-  background-color: white;
-  border: 0 solid #4b4b4b;
-  border-radius: 4px;
-  transition: background-color 0.3s ease;
-  text-decoration: underline;
-  text-align: left;
-  width: fit-content;
-}
+#city-list h3, #category-list h3 { margin-top: 20px; margin-bottom: 10px; font-size: 1.9rem;}
+#year-list h3 { margin-top: 0; margin-bottom: 10px; font-size: 1.9rem;}
 
-button.clear-filters:hover {
-  background: #c4c4c4;
-}
 
-#city-list h3, #category-list h3 {
-  margin-top: 20px;
-  margin-bottom: 10px;
-}
-#year-list h3 {
-  margin-top: 0;
-  margin-bottom: 10px;
-}
-
-/* Jobb oldal – Graffitik listája */
+/* --- JOBB OLDAL (AZ ÚJ LOGIKA) --- */
 #main-container-right {
-  display: flex;
-  gap: 24px;          /* egyezzen a COL_GAP változóval */
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: flex-start;
+  /* Itt már nem Flexboxot használunk, hanem Multi-column layoutot */
+  display: block; 
   width: 100%;
+  
+  /* Ezeket a JS is állítja, de itt van az alap */
+  column-count: 5;
+  column-gap: 24px;
+  column-fill: auto; /* Ez kulcsfontosságú: sorban töltse fel az oszlopokat */
+  
+  /* A magasságot a JS fogja állítani pixelpontosan */
+  height: auto; 
+  
+  overflow: hidden; /* Hogy a "duplázás" előtti pillanatban ne jelenjen meg görgetősáv */
 }
 
-.generated-column {
-  /* a JS állítja a min-width-et; itt csak alap stílus */
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  align-items: flex-start;
+/* FONTOS: A betűcsoportok (pl. "A" betű és a lista) TÖRJHETNEK oszlopok között */
+.letter-group {
+    break-inside: auto; /* Engedélyezzük a törést */
+    margin-bottom: 10px;
+    display: block; /* Biztosítjuk, hogy blokk elem legyen */
 }
-.letter-group { /* a belső blokkok */
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  break-inside: avoid;
-}
-.letter-group a { white-space: nowrap; } /* a nevek egy sorban maradjanak */
-/*
-.letter-separator {
-    border: none;  
-    border-top: 1px dashed rgb(103, 103, 103); 
-    height: 0;
-    margin: 1px 0;  
-}
-*/
+
 .letter-group h3 {
   margin: 0;
-  font-size: 1.7rem;
+  padding-bottom: 10px;
+  font-size: 1.9rem;
   font-weight: 300;
-  padding-left: 0;
   color: #4b4b4b;
-  text-decoration: underline;
+  text-decoration: none;
+  
+  /* A címsor ne maradjon egyedül az oszlop alján */
+  break-after: avoid; 
+}
+
+.letter-group hr {
+  border: none;
+  border-top: 1px dashed #4b4b4b;
+  margin: 5px 0 10px 0;
 }
 
 .letter-group ul {
@@ -131,51 +96,70 @@ button.clear-filters:hover {
   margin: 0;
 }
 
+.letter-group ul li {
+   /* A lista elemek törhetnek */
+   display: block;
+}
+
+.simple-item {
+  margin-bottom: 5px;
+  break-inside: avoid; /* Hogy egy név ne törjön ketté */
+}
+
+.simple-item, .letter-group ul li {
+    margin-bottom: 5px;
+    break-inside: avoid; 
+    page-break-inside: avoid;
+}
+
 .simple-item a, .letter-group ul li a {
-  font-size: 1.7rem;
+  font-size: 1.5rem;
   text-decoration: none;
   color: #4b4b4b;
-  white-space: nowrap;
+  /*white-space: nowrap;*/  /* Eltávolítva, hogy a hosszú nevek törhessenek */
+  display: block; /* Fontos a helyes tördeléshez */
 }
 
 .simple-item a:hover, .letter-group ul li a:hover {
-  font-weight: 600;
+  text-decoration:line-through;
 }
 
-/* Reszponzív módosítások */
+
+/* Reszponzivitás megtartása */
 @media (max-width: 1200px) {
-  #main-container-left {
-    width: 25vw;
-  }
+  #main-container-left { width: 25vw; }
 }
 
 @media (max-width: 900px) {
+  /* A fő konténer legyen blokk, ne flex, hogy a szűrő beolvadhasson */
   #main-container {
-    flex-direction: column;
+    display: block !important; 
   }
-  #main-container-left {
-    margin-top: 5%;
-    width: 100%;
-    min-width: 180px;
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 10px;
-    color: #4b4b4b;
-  }
-  #main-container-right {
-    margin-top: 20px;
-  }
-  #year-list, #city-list, #category-list, #city-list h3, #category-list h3 {
-    flex: 1;
-    margin-top: 0;
-  }
-  #clear-filters {
-    width: 100%;
-    text-align: center;
-  }
-}
 
-@media (max-width: 600px) {
+  /* A jobb oldali konténer (lista) legyen 2 oszlopos */
+  #main-container-right {
+    column-count: 2 !important;
+    column-gap: 15px !important;
+    display: block;
+  }
+
+  /* A bal oldali panel (szűrők) stílusa, amikor bekerül a listába */
+  #main-container-left {
+    width: 100% !important;     /* Töltse ki az oszlop szélességét */
+    min-width: 0 !important;
+    margin-bottom: 30px;        /* Térköz a szűrők és az első graffiti között */
+    break-inside: avoid;        /* Ne törjön szét a szűrődoboz oszlopok között */
+    display: block;             /* Biztos ami biztos */
+    border-bottom: 2px solid #ccc; /* Kis elválasztó vizuálisan */
+    padding-bottom: 20px;
+  }
   
+  /* Ha a szűrők vízszintesen voltak (előző kód maradvány), most álljanak vissza függőlegesre */
+  #main-container-left {
+      flex-direction: column !important;
+  }
+  
+  #year-list, #city-list, #category-list {
+      margin-bottom: 15px;
+  }
 }

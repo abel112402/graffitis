@@ -54,7 +54,7 @@ nav a {
   border-radius: 5px;
   cursor: pointer;
   transition: all 0.3s ease;
-  transform: scaleY(0.8); /* A te stílusod megtartva */
+  transform: scaleY(1); /* A te stílusod megtartva */
   white-space: nowrap; /* Ne törjön sort a szöveg a gombon belül */
 }
 
@@ -62,7 +62,7 @@ nav a {
 #upload-button nav a {
   color: black;
   font-size: 3.5rem;
-  transform: scaleY(0.75) scaleX(1.2);
+  transform: scaleY(0.75) scaleX(1);
   transform-origin: right center; /* Hogy ne lógjon ki jobbra scalingnél */
 }
 
@@ -76,12 +76,11 @@ nav a:hover {
 /* 1. TABLET NÉZET (900px alatt) */
 @media (max-width: 900px) {
   #nav-upper {
-    flex-wrap: wrap; /* Engedi, hogy ha nem férnek el, új sorba essenek */
     gap: 10px;
   }
   
   nav a {
-    font-size: 1.5rem; /* Kicsit kisebb betűk */
+    font-size: 1.7rem; /* Kicsit kisebb betűk */
     padding: 5px 10px;
   }
 
@@ -98,27 +97,27 @@ nav a:hover {
 
   /* A felső sáv elemei kerüljenek egymás alá */
   #nav-upper {
-    flex-direction: column; 
     gap: 15px;
+    flex-wrap: wrap; /* Ha sok gomb van, törjenek sorba */
+    justify-content: center;
   }
 
   /* A bal és jobb oldali blokkok teljes szélességűek */
   #nav-upper-left,
   #nav-upper-right {
     width: 100%;
-    flex-wrap: wrap; /* Ha sok gomb van, törjenek sorba */
     gap: 10px;
   }
 
   /* A gombok töltsék ki a helyet mobilon */
   .nav-button {
-    flex: 1 1 40%; /* Minimum 40%-os szélesség, de nőhetnek */
+    flex: 1 1 100%; /* Minimum 40%-os szélesség, de nőhetnek */
   }
 
   nav a {
     width: 100%;
     text-align: center;
-    font-size: 1.6rem; /* Olvasható méret */
+    font-size: 1.8rem; /* Olvasható méret */
     display: block; /* Teljes szélességű kattintható terület */
     margin: 0;
   }

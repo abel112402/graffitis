@@ -51,7 +51,7 @@ header.innerHTML = `
 const adminLoggedIn = await isAdmin();
 if (!adminLoggedIn) {
   alert('Nincs admin jogosultságod.');
-  location.href = '/';
+  location.href = '/graffitis/index.html';
 } else {
   document.getElementById('adminSection').style.display = 'block';
 

@@ -4,59 +4,70 @@
 <meta charset="UTF-8">
 <title>Graffiti Feltöltés</title>
 <link rel="stylesheet" href="uploadStyle.css" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
 <h1>Graffiti Feltöltés</h1>
 
 <form id="uploadForm" onsubmit="upload(event)">
   <label>
-    Graffiti neve:
+    Graffiti neve (Kötelező):
     <input type="text" id="name" required placeholder="Graffiti neve">
   </label>
 
   <label>
-    Év:
-    <input type="number" id="year" required>
+    Város (Kötelező):
+    <input type="text" id="city" required placeholder="Pl. Budapest">
   </label>
 
   <label>
-    Képek:
+    Kerület (Opcionális):
+    <input type="text" id="district" placeholder="Pl. VII.">
+  </label>
+
+  <label>
+    Utca (Opcionális):
+    <input type="text" id="street" placeholder="Pl. Dob utca">
+  </label>
+
+  <label>
+    Leírás (Opcionális):
+    <textarea id="description" rows="3" placeholder="Rövid leírás a graffitiről..."></textarea>
+  </label>
+
+  <label>
+    Év (Opcionális):
+    <input type="number" id="year">
+  </label>
+
+  <label>
+    Képek (Kötelező):
     <input type="file" id="image" accept="image/*" multiple required>
   </label>
 
   <div id="category-select-div">
-    Kategória:
+    Kategória (Opcionális):
     <div>
-      <select class="select-category" id="select-category">
-      </select>
+      <select class="select-category" id="first-category-select">
+         </select>
     </div>
   </div>
-  <span id="selectCatErrorMsg" style="color: red; display: none;">Kérlek válassz kategóriát!</span>
   <button id="category-select-btn" class="plus-icon">+</button>
 
   <div id="add-category-div">
-      Új kategória:
+      Új kategória hozzáadása (Opcionális):
       <div>
-        <input type="text" class="add-category" id="add-category" placeholder="Kategória">
+        <input type="text" class="add-category" placeholder="Kategória">
       </div>
   </div>
-  <span id="addCatErrorMsg" style="color: red; display: none;">Kérlek töltsd ki a mezőt!</span>
   <button id="add-category-btn" class="plus-icon">+</button>
 
-  <label>
-    Hely: <span id="location-display">Kattints a térképre a város kijelöléséhez</span>
-    <div id="map"></div>
-  </label>
-
-  <button type="submit">Feltöltés</button>
+  <button type="submit" style="margin-top: 20px;">Feltöltés</button>
 </form>
 
 <script type="module">
 import { supabase } from './supabaseClient.js';
-import * as L from 'https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.esm.js';
 
-// Kategóriák betöltése
+// Kategóriák betöltése - CSAK AZ ELSŐBE töltjük be kezdetben
 async function loadCategories() {
   const { data, error } = await supabase
     .from('category')
@@ -65,111 +76,62 @@ async function loadCategories() {
 
   if (error) return console.error('Hiba a kategóriák lekérésekor:', error);
 
-  const selectDivs = document.querySelector('#category-select-div').querySelectorAll('div');
+  // Csak az első select elemet célozzuk meg
+  const firstSelect = document.getElementById('first-category-select');
+  firstSelect.innerHTML = ''; // Biztonsági ürítés
 
   const firstOption = document.createElement('option');
   firstOption.value = '';
   firstOption.textContent = 'Nincs kiválasztva';
-
-  selectDivs.forEach(div => {
-      div.querySelector('select').appendChild(firstOption);
-  })
+  firstSelect.appendChild(firstOption);
 
   data.forEach(cat => {
     const option = document.createElement('option');
     option.value = cat.id;
     option.textContent = cat.category_name;
-
-    selectDivs.forEach(div => {
-      div.querySelector('select').appendChild(option);
-    })
+    firstSelect.appendChild(option);
   });
 }
 loadCategories();
 
 ////////////////////////////////////////////////
-// Kategória hozzáadás kezelése
+// Kategória mező hozzáadása (MÁSOLÁSSAL)
 
-document.getElementById('category-select-btn').addEventListener('click', async e => {
+document.getElementById('category-select-btn').addEventListener('click', e => {
   e.preventDefault();
+  
+  // Megkeressük az első selectet, ami már fel van töltve
+  const sourceSelect = document.getElementById('first-category-select');
+  
+  // Klónozzuk a tartalmát (opciókat)
+  const newSelect = sourceSelect.cloneNode(true);
+  
+  // Töröljük az ID-t a klónról (ne legyen duplikált ID) és reseteljük a kiválasztást
+  newSelect.removeAttribute('id');
+  newSelect.value = ''; 
 
-  const selectCatDiv = document.getElementById('category-select-div');
-  const inputDivs = selectCatDiv.querySelectorAll('div');
-  const lastInput = inputDivs[inputDivs.length - 1].querySelector('select');
-
-  console.log(inputDivs);
-
-  if (!lastInput.value) {
-    document.getElementById('selectCatErrorMsg').style.display = 'inline';
-  } else {
-    document.getElementById('selectCatErrorMsg').style.display = 'none';
-    const newDiv = document.createElement('div');
-    newDiv.innerHTML += `
-      <select class="select-category"></select>
-    `;
-    selectCatDiv.appendChild(newDiv);
-    loadCategories();
-  }  
+  const newDiv = document.createElement('div');
+  newDiv.appendChild(newSelect);
+  
+  document.getElementById('category-select-div').appendChild(newDiv);
 });
 
-document.getElementById('add-category-btn').addEventListener('click', async e => {
+document.getElementById('add-category-btn').addEventListener('click', e => {
   e.preventDefault();
-
   const addCatDiv = document.getElementById('add-category-div');
-  const inputDivs = addCatDiv.querySelectorAll('div');
-  const lastInput = inputDivs[inputDivs.length - 1].querySelector('input');
-
-
-  if (!lastInput.value.trim()) {
-    document.getElementById('addCatErrorMsg').style.display = 'inline';
-  }
-  else {
-    document.getElementById('addCatErrorMsg').style.display = 'none';
-    const newDiv = document.createElement('div');
-    newDiv.innerHTML += `
-      <input type="text" class="add-category" placeholder="Kategória">
-    `;
-    addCatDiv.appendChild(newDiv);
-  }
+  
+  const newDiv = document.createElement('div');
+  newDiv.innerHTML = `<input type="text" class="add-category" placeholder="Kategória">`;
+  addCatDiv.appendChild(newDiv);
 });
 
 
 //////////////////////////////////////////////////
-
+// Év beállítások
 document.getElementById('year').placeholder = new Date().getFullYear();
 document.getElementById('year').min = 1900;
 document.getElementById('year').max = new Date().getFullYear();
 
-
-let selectedLat = null;
-let selectedLng = null;
-let selectedCity = '';
-
-const map = L.map('map').setView([47.4979, 19.0402], 13);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; OpenStreetMap contributors'
-}).addTo(map);
-
-const locationDisplay = document.getElementById('location-display');
-let marker = null;
-
-map.on('click', async e => {
-  selectedLat = e.latlng.lat;
-  selectedLng = e.latlng.lng;
-
-  if (marker) map.removeLayer(marker);
-  marker = L.marker([selectedLat, selectedLng]).addTo(map);
-
-  try {
-    const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${selectedLat}&longitude=${selectedLng}&localityLanguage=hu`);
-    const data = await res.json();
-    selectedCity = data.city || data.locality || 'Ismeretlen város';
-    locationDisplay.textContent = selectedCity;
-  } catch(err) {
-    console.error(err);
-    locationDisplay.textContent = 'Hiba a város lekérésekor';
-  }
-});
 
 function sanitizeFileName(name) {
   return name
@@ -181,10 +143,20 @@ function sanitizeFileName(name) {
 
 async function upload(e) {
   e.preventDefault();
+  
+  // 1. Mezők beolvasása
   const name = document.getElementById('name').value.trim();
-  const year = parseInt(document.getElementById('year').value, 10);
+  const city = document.getElementById('city').value.trim();
+  const district = document.getElementById('district').value.trim();
+  const street = document.getElementById('street').value.trim();
+  const description = document.getElementById('description').value.trim();
+  
+  const yearInput = document.getElementById('year').value;
+  const year = yearInput ? parseInt(yearInput, 10) : null;
+  
   const files = document.getElementById('image').files;
 
+  // Kategóriák összegyűjtése
   const categoryIDs = []
   const categorySelects = document.querySelectorAll('.select-category');
   categorySelects.forEach(select => {
@@ -198,16 +170,14 @@ async function upload(e) {
     if (val) newCategories.push(val);
   });
 
-  if (newCategoryInputs.length == 0
-  && categoryIDs.length === 0){
-    return alert('Kérlek válassz vagy adj hozzá kategóriát!');
+  // 2. Validáció
+  if (!name || !city || !files.length) {
+      return alert('A Név, Város és legalább egy Kép megadása kötelező!');
   }
-
-
-  if (!name || !files.length || !selectedLat || !selectedLng) return alert('Töltsd ki a mezőket és válassz helyet!');
 
   const slug = name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'');
 
+  // Slug ellenőrzés
   const { data: existing } = await supabase
     .from('graffiti')
     .select('id')
@@ -216,6 +186,7 @@ async function upload(e) {
 
   if (existing) return alert('Ez a név már létezik, válassz másikat.');
 
+  // 3. Képek feltöltése
   const imagePaths = [];
   for (let file of files) {
     if (!file.type.startsWith('image/')) return alert('Csak képfájl!');
@@ -232,25 +203,27 @@ async function upload(e) {
     imagePaths.push(filePath);
   }
 
+  // 4. Adatbázisba írás
   const { data, error } = await supabase
     .from('graffiti')
     .insert([{
-      name,
-      slug,
+      name: name,
+      slug: slug,
       image_path: imagePaths,
-      year,
+      year: year,
       category_id: categoryIDs,
       new_category: newCategories,
-      latitude: selectedLat,
-      longitude: selectedLng,
-      accepted: false,
-      city: selectedCity
+      city: city,
+      district: district,
+      street: street,
+      description: description,
+      accepted: true
     }]);
 
   if (error) return alert('DB hiba: ' + error.message);
 
-  alert('Sikeres feltöltés. Vár a moderációra.');
-  location.href = '/';
+  alert('Sikeres feltöltés.');
+  location.href = '/graffitis/index.html';
 }
 
 window.upload = upload;

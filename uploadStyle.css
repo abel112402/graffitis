@@ -11,11 +11,11 @@ html {
   font-family: Helvetica, Arial, sans-serif;
     font-weight: 300;
   font-style: normal;
-  background-color: rgb(230, 230, 230);
+  background-color: white;
 }
 
 body {
-  color: #4b4b4b;
+  color: white;
   line-height: 1.6;
   padding: 20px;
 }
@@ -49,7 +49,9 @@ label {
 
 input[type="text"],
 input[type="number"],
-input[type="file"] {
+input[type="file"],
+input[type="textarea"],
+#description {
   padding: 10px 12px;
   margin-top: 6px;
   border: 1px solid #ccc;
@@ -127,7 +129,8 @@ button[type="submit"]:hover {
 
   input[type="text"],
   input[type="number"],
-  input[type="file"] {
+  input[type="file"],
+  input[type="textarea"] {
     font-size: 0.95rem;
   }
 

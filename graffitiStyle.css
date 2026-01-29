@@ -1,7 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,200..900;1,7..72,200..900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&family=Inconsolata:wght@200..900&display=swap');
 
 html {
+  font-family: "Courier Prime", monospace;
   background-color: white;
   font-size: 62.5%; /* Így 1rem = 10px, könnyebb számolni */
 }
@@ -23,7 +23,6 @@ body {
   visibility:hidden;
 }
 * {
-  font-family: "Courier Prime", monospace;
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -140,9 +139,10 @@ h2 {
 
 #images img {
   width: calc(50% - 10px); /* 2 oszlopos elrendezés tableten/desktopon */
-  max-width: 500px;
-  height: 300px;
-  object-fit: cover; /* A képek egységes méretűek, levágással */
+  /*max-width: 500px;*/
+  max-height: 70vh;
+  width: auto;
+  object-fit: contain;
   /*box-shadow: 0 4px 10px rgba(0,0,0,0.1);*/
   cursor: zoom-in;
   transition: transform 0.2s ease;

@@ -43,7 +43,7 @@ async function loadDetail() {
 
   const { data, error } = await supabase
     .from('graffiti')
-    .select('id, name, image_path, year, category_id, city, district, street, description')
+    .select('id, name, image_path, year, category_id, city, district, street')
     .eq('slug', slug)
     .maybeSingle();
 
@@ -52,9 +52,16 @@ async function loadDetail() {
   // 1. Cím
   const addressParts = [data.city, data.district, data.street].filter(Boolean).map(part => part.trim().toUpperCase());;
   const addressElement = document.getElementById('address-display');
-  addressElement.textContent = addressParts.length > 0 
-    ? `${addressParts.join(', ')},` 
-    : 'Helyszín: Ismeretlen';
+  if (data.year) {
+    addressElement.textContent = addressParts.length > 0 
+      ? `${addressParts.join(', ')},` 
+      : 'Helyszín: Ismeretlen';
+  } else {
+    addressElement.textContent = addressParts.length > 0 
+          ? `${addressParts.join(', ')}` 
+          : 'Helyszín: Ismeretlen';
+  }
+  
 
   // 2. Alapadatok
   document.getElementById('title').innerText = data.name;
@@ -63,8 +70,6 @@ async function loadDetail() {
   // 3. Leírás
   if (data.description) {
     const descDiv = document.getElementById('description-display');
-    descDiv.style.display = 'block';
-    descDiv.textContent = data.description;
   }
 
   // 4. Kategóriák
@@ -131,12 +136,10 @@ async function loadDetail() {
   expandBtn.onclick = () => {
     const descDiv = document.getElementById('description-display');
     const titleEl = document.getElementById('title');
-    if (descDiv.classList.contains('hidden')) {
-      descDiv.classList.remove('hidden');
+    if (titleEl.classList.contains('hidden')) {
       titleEl.classList.remove('hidden');
       expandBtn.innerText = 'X';
     } else {
-      descDiv.classList.add('hidden');
       titleEl.classList.add('hidden');
       expandBtn.innerText = '...';
     }

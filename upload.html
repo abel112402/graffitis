@@ -2,87 +2,85 @@
 <html lang="hu">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Graffiti Feltöltés</title>
 <link rel="stylesheet" href="uploadStyle.css" />
 </head>
 <body>
-<h1>Graffiti Feltöltés</h1>
+<h1>Feltöltés</h1>
 
 <form id="uploadForm" onsubmit="upload(event)">
   <label>
-    Graffiti neve (Kötelező):
-    <input type="text" id="name" required placeholder="Graffiti neve">
+    felirat:
+    <input type="text" id="name" required placeholder="Felirat...">
   </label>
 
   <label>
-    Város (Kötelező):
-    <input type="text" id="city" required placeholder="Pl. Budapest">
+    város:
+    <input type="text" id="city" placeholder="Pl. Budapest">
   </label>
 
   <label>
-    Kerület (Opcionális):
+    kerület:
     <input type="text" id="district" placeholder="Pl. VII.">
   </label>
 
   <label>
-    Utca (Opcionális):
+    utca:
     <input type="text" id="street" placeholder="Pl. Dob utca">
   </label>
 
   <label>
-    Leírás (Opcionális):
-    <textarea id="description" rows="3" placeholder="Rövid leírás a graffitiről..."></textarea>
-  </label>
-
-  <label>
-    Év (Opcionális):
+    év:
     <input type="number" id="year">
   </label>
 
   <label>
-    Képek (Kötelező):
+    képek:
     <input type="file" id="image" accept="image/*" multiple required>
   </label>
 
   <div id="category-select-div">
-    Kategória (Opcionális):
-    <div>
-      <select class="select-category" id="first-category-select">
-         </select>
-    </div>
+    <label>
+      kategória:
+      <div>
+        <select class="select-category" id="first-category-select">
+        </select>
+      </div>
+    </label>
   </div>
   <button id="category-select-btn" class="plus-icon">+</button>
 
   <div id="add-category-div">
-      Új kategória hozzáadása (Opcionális):
+    <label>
+      új kategória hozzáadása:
       <div>
         <input type="text" class="add-category" placeholder="Kategória">
       </div>
+    </label>
   </div>
   <button id="add-category-btn" class="plus-icon">+</button>
 
-  <button type="submit" style="margin-top: 20px;">Feltöltés</button>
+  <button type="submit" style="margin-top: 20px;">feltöltés</button>
 </form>
 
 <script type="module">
 import { supabase } from './supabaseClient.js';
 
-// Kategóriák betöltése - CSAK AZ ELSŐBE töltjük be kezdetben
+// --- SEGEDFUGGVENYEK ---
+function sanitizeFileName(name) {
+  return name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '-').replace(/[^a-zA-Z0-9\-_.]/g, '');
+}
+
+// Kategóriák betöltése a legördülőhöz
 async function loadCategories() {
-  const { data, error } = await supabase
-    .from('category')
-    .select('id, category_name')
-    .order('category_name', { ascending: true });
+  const { data, error } = await supabase.from('category').select('id, category_name').order('category_name', { ascending: true });
+  if (error) return console.error(error);
 
-  if (error) return console.error('Hiba a kategóriák lekérésekor:', error);
-
-  // Csak az első select elemet célozzuk meg
   const firstSelect = document.getElementById('first-category-select');
-  firstSelect.innerHTML = ''; // Biztonsági ürítés
-
+  firstSelect.innerHTML = ''; 
   const firstOption = document.createElement('option');
-  firstOption.value = '';
-  firstOption.textContent = 'Nincs kiválasztva';
+  firstOption.value = ''; firstOption.textContent = 'Nincs kiválasztva';
   firstSelect.appendChild(firstOption);
 
   data.forEach(cat => {
@@ -94,135 +92,117 @@ async function loadCategories() {
 }
 loadCategories();
 
-////////////////////////////////////////////////
-// Kategória mező hozzáadása (MÁSOLÁSSAL)
-
+// UI eseménykezelők (Hozzáadás gombok)
 document.getElementById('category-select-btn').addEventListener('click', e => {
   e.preventDefault();
-  
-  // Megkeressük az első selectet, ami már fel van töltve
-  const sourceSelect = document.getElementById('first-category-select');
-  
-  // Klónozzuk a tartalmát (opciókat)
-  const newSelect = sourceSelect.cloneNode(true);
-  
-  // Töröljük az ID-t a klónról (ne legyen duplikált ID) és reseteljük a kiválasztást
-  newSelect.removeAttribute('id');
-  newSelect.value = ''; 
-
-  const newDiv = document.createElement('div');
-  newDiv.appendChild(newSelect);
-  
+  const newSelect = document.getElementById('first-category-select').cloneNode(true);
+  newSelect.removeAttribute('id'); newSelect.value = ''; 
+  const newDiv = document.createElement('div'); newDiv.appendChild(newSelect);
   document.getElementById('category-select-div').appendChild(newDiv);
 });
 
 document.getElementById('add-category-btn').addEventListener('click', e => {
   e.preventDefault();
-  const addCatDiv = document.getElementById('add-category-div');
-  
   const newDiv = document.createElement('div');
   newDiv.innerHTML = `<input type="text" class="add-category" placeholder="Kategória">`;
-  addCatDiv.appendChild(newDiv);
+  document.getElementById('add-category-div').appendChild(newDiv);
 });
 
-
-//////////////////////////////////////////////////
-// Év beállítások
+// Év mező beállítások
 document.getElementById('year').placeholder = new Date().getFullYear();
 document.getElementById('year').min = 1900;
 document.getElementById('year').max = new Date().getFullYear();
 
 
-function sanitizeFileName(name) {
-  return name
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/[^a-zA-Z0-9\-_.]/g, '');
-}
-
+// ==========================================
+// FELTÖLTÉS LOGIKA (Duplikáció ellenőrzéssel)
+// ==========================================
 async function upload(e) {
   e.preventDefault();
   
-  // 1. Mezők beolvasása
   const name = document.getElementById('name').value.trim();
   const city = document.getElementById('city').value.trim();
   const district = document.getElementById('district').value.trim();
   const street = document.getElementById('street').value.trim();
-  const description = document.getElementById('description').value.trim();
-  
-  const yearInput = document.getElementById('year').value;
-  const year = yearInput ? parseInt(yearInput, 10) : null;
-  
+  const year = document.getElementById('year').value ? parseInt(document.getElementById('year').value, 10) : null;
   const files = document.getElementById('image').files;
 
-  // Kategóriák összegyűjtése
-  const categoryIDs = []
-  const categorySelects = document.querySelectorAll('.select-category');
-  categorySelects.forEach(select => {
-    if (select.value) categoryIDs.push(select.value);
-  });
+  // 1. Meglévő (Dropdownból választott) kategóriák ID-i
+  let finalCategoryIDs = [];
+  document.querySelectorAll('.select-category').forEach(s => { if(s.value) finalCategoryIDs.push(s.value); });
 
-  const newCategories = [];
-  const newCategoryInputs = document.querySelectorAll('.add-category');
-  newCategoryInputs.forEach(input => {
-    const val = input.value.trim();
-    if (val) newCategories.push(val);
-  });
+  // 2. Új kategóriák szövegei
+  const newCategoryNames = [];
+  document.querySelectorAll('.add-category').forEach(i => { if(i.value.trim()) newCategoryNames.push(i.value.trim()); });
 
-  // 2. Validáció
-  if (!name || !city || !files.length) {
-      return alert('A Név, Város és legalább egy Kép megadása kötelező!');
-  }
+  if (!name || !files.length) return alert('Hiányzó adatok!');
 
+  // Slug és feltöltés előkészítése
   const slug = name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'');
+  const { data: existing } = await supabase.from('graffiti').select('id').eq('slug', slug).maybeSingle();
+  if (existing) return alert('Ez a név már létezik!');
 
-  // Slug ellenőrzés
-  const { data: existing } = await supabase
-    .from('graffiti')
-    .select('id')
-    .eq('slug', slug)
-    .maybeSingle();
-
-  if (existing) return alert('Ez a név már létezik, válassz másikat.');
-
-  // 3. Képek feltöltése
+  // Képek feltöltése
   const imagePaths = [];
   for (let file of files) {
-    if (!file.type.startsWith('image/')) return alert('Csak képfájl!');
-    if (file.size > 5*1024*1024) return alert('Max 5 MB/file.');
-
-    const safeFileName = sanitizeFileName(file.name);
-    const filePath = `uploads/${Date.now()}_${safeFileName}`;
-    const { data: uploadData, error: uploadErr } = await supabase.storage
-      .from('graffiti-images')
-      .upload(filePath, file);
-
-    if (uploadErr) return alert('Feltöltési hiba: ' + uploadErr.message);
-
+    const filePath = `uploads/${Date.now()}_${sanitizeFileName(file.name)}`;
+    const { error: upErr } = await supabase.storage.from('graffiti-images').upload(filePath, file);
+    if (upErr) return alert('Kép feltöltési hiba: ' + upErr.message);
     imagePaths.push(filePath);
   }
 
-  // 4. Adatbázisba írás
-  const { data, error } = await supabase
-    .from('graffiti')
-    .insert([{
-      name: name,
-      slug: slug,
-      image_path: imagePaths,
-      year: year,
-      category_id: categoryIDs,
-      new_category: newCategories,
-      city: city,
-      district: district,
-      street: street,
-      description: description,
-      accepted: true
-    }]);
+  // --- OKOS KATEGÓRIA BESZÚRÁS ---
+  if (newCategoryNames.length > 0) {
+    // Lekérjük az ÖSSZES létező kategóriát ellenőrzéshez
+    const { data: allCategories } = await supabase.from('category').select('id, category_name');
+
+    const catsToInsert = [];
+    
+    for (const newName of newCategoryNames) {
+        // Megnézzük, létezik-e már (kisbetű-nagybetű függetlenül)
+        const existingCat = allCategories.find(c => c.category_name.toLowerCase() === newName.toLowerCase());
+
+        if (existingCat) {
+            // Ha létezik, csak felvesszük az ID-ját
+            finalCategoryIDs.push(existingCat.id);
+        } else {
+            // Ha NEM létezik, akkor előkészítjük beszúrásra (ha még nincs a listában)
+            if (!catsToInsert.some(c => c.category_name.toLowerCase() === newName.toLowerCase())) {
+                catsToInsert.push({ category_name: newName });
+            }
+        }
+    }
+
+    // Beszúrjuk azokat, amik tényleg újak
+    if (catsToInsert.length > 0) {
+        const { data: insertedCats, error: catError } = await supabase
+            .from('category')
+            .insert(catsToInsert)
+            .select();
+
+        if (catError) return alert('Kategória hiba: ' + catError.message);
+        
+        // Hozzáadjuk az új ID-kat a listához
+        insertedCats.forEach(c => finalCategoryIDs.push(c.id));
+    }
+  }
+
+  // --- MENTÉS ---
+  const { error } = await supabase.from('graffiti').insert([{
+      name, 
+      slug, 
+      image_path: imagePaths, 
+      year, 
+      city, 
+      district, 
+      street, 
+      accepted: true,
+      category_id: finalCategoryIDs, // A végleges ID lista
+      new_category: null // Üresen hagyjuk
+  }]);
 
   if (error) return alert('DB hiba: ' + error.message);
-
-  alert('Sikeres feltöltés.');
+  alert('Sikeres feltöltés!');
   location.href = '/graffitis/index.html';
 }
 

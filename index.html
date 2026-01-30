@@ -204,7 +204,7 @@ function renderList(list) {
     } else {
         // Desktopon: A szűrő panel marad a fő konténerben, a lista előtt (visszakerül a helyére)
         // Ezt a lépést már megtettük az 1. lépésben, de biztosítjuk a Desktop oszlopokat
-        container.style.columnCount = '5';
+        container.style.columnCount = '4';
     }
 
     // 4. LÉPÉS: Graffiti elemek generálása (ugyanaz, mint eddig)
@@ -276,9 +276,9 @@ function renderList(list) {
     container.style.height = `${fixedHeight}px`;
 
     // Duplázás ha kifolyik
-    let safetyCounter = 10;
+    let safetyCounter = 40;
     while (container.scrollWidth > container.clientWidth + 5 && safetyCounter > 0) {
-        fixedHeight = fixedHeight * 2;
+        fixedHeight = fixedHeight * 1.2;
         container.style.height = `${fixedHeight}px`;
         safetyCounter--;
     }

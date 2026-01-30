@@ -14,10 +14,10 @@
 
 <div id="admin-actions"></div>
 <div id="images"></div>
+<h1 id="title">Betöltés...</h1>
 <div id="add-year-div"><div id="address-display"></div><div id="year-display"></div></div>
-<div id="category-display"></div>
 <div id="expand-div"><a id="expend-btn">...</a></div>
-<h1 id="title" class="hidden">Betöltés...</h1>
+<div id="category-display" class="hidden"></div>
 <div id="description-display" class="hidden" style="display: none;"></div>
 
 
@@ -64,7 +64,7 @@ async function loadDetail() {
   
 
   // 2. Alapadatok
-  document.getElementById('title').innerText = data.name;
+  document.getElementById('title').innerText = data.name.charAt(0).toUpperCase() + data.name.slice(1);
   document.getElementById('year-display').innerText = data.year ? `${data.year}` : '';
 
   // 3. Leírás
@@ -135,7 +135,7 @@ async function loadDetail() {
   const expandBtn = document.getElementById('expend-btn');
   expandBtn.onclick = () => {
     const descDiv = document.getElementById('description-display');
-    const titleEl = document.getElementById('title');
+    const titleEl = document.getElementById('category-display');
     if (titleEl.classList.contains('hidden')) {
       titleEl.classList.remove('hidden');
       expandBtn.innerText = 'X';

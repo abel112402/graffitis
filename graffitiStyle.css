@@ -74,15 +74,21 @@ h2 {
   margin-bottom: 12px;
   color: #333;
 }
-#add-year-div{
+#title{
   display: flex;
   gap: 10px;
   justify-content: center;
   margin-top: 2%;
 }
+#add-year-div{
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 0;
+}
 #expand-div{
   text-align: center;
-  margin-top: 10px;
+  margin-top:0;
 }
 #expend-btn{
   font-size: 1.6rem;
@@ -94,7 +100,7 @@ h2 {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 10px;
+  gap: 0;
 }
 
 .category-badge {
@@ -118,9 +124,8 @@ h2 {
 }
 
 #description-display {
-  text-align: left;
-  margin: 0px 0;
-  padding: 15px;
+  text-align: center;
+  margin: 0;
   background-color: #f9f9f9;
   border-left: 4px solid #aaa;
   white-space: pre-wrap;

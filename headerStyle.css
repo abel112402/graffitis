@@ -1,137 +1,194 @@
 /* --- ALAP BEÁLLÍTÁSOK (Desktop) --- */
 header {
-  display: block;
-  padding: 20px 20px 0 20px; /* Egyszerűsített padding */
-  box-sizing: border-box; /* Fontos: a padding ne növelje a szélességet */
-  width: 100%;
-  overflow-x: hidden; /* Megakadályozza a vízszintes görgetést */
+    display: flex;
+    justify-content: flex-end; /* Jobbra igazítjuk a tartalmat */
+    align-items: flex-start;
+    padding: 20px 40px;
+    box-sizing: border-box;
+    width: 100%;
+    position: relative;
+    z-index: 1000;
 }
 
-/* Felső sáv (Bal és Jobb oldal) */
-#nav-upper {
-  width: 100%;
-  display: flex;
-  justify-content: space-between; /* Széthúzza a két oldalt */
-  align-items: center; /* Függőlegesen középre igazít */
-  gap: 20px; /* Térköz a bal és jobb blokk között */
+/* Hamburger gomb (alapból rejtett desktopon) */
+#hamburger-btn {
+    display: none;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 35px;
+    height: 24px;
+    cursor: pointer;
+    z-index: 2000; /* Mindig felül legyen */
+    position: relative;
 }
 
-#nav-upper-left, 
+#hamburger-btn span {
+    display: block;
+    height: 3px;
+    width: 100%;
+    background-color: #333;
+    border-radius: 2px;
+    transition: all 0.3s ease-in-out;
+}
+
+/* Navigációs konténer elrendezése desktopon */
+#nav-menu-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column; /* Felső sor és alsó sor */
+    align-items: flex-end;  /* Jobbra igazítás */
+}
+
+/* Felső sor (Linkek) */
 #nav-upper-right {
-  flex: 1; /* Egyenlő arányban osztoznak a helyen */
-  display: flex;
-  justify-content: center;
-  gap: 15px; /* Gombok közötti térköz */
+    display: flex;
+    align-items: center;
+    gap: 15px;
 }
 
-/* Alsó sáv (Feltöltés gomb) */
+.admin-wrapper {
+    display: flex;
+    gap: 15px;
+}
+
+/* Alsó sor (Feltöltés) */
 #nav-lower {
-  width: 100%;
-  display: flex;
-  justify-content: flex-end; /* Jobbra igazítás alapból */
-  margin-top: 20px; /* Százalék helyett fix pixel vagy rem jobb */
-  padding-right: 20px; /* Hogy ne tapadjon a szélére */
-  box-sizing: border-box;
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
 }
 
-/* Gomb konténerek */
-.nav-button {
-  /* A fix 30% helyett hagyjuk, hogy a tartalom határozza meg, 
-     de flexboxban rugalmasan viselkedjen */
-  flex: 0 1 auto; 
-  display: flex;
-  justify-content: center;
+/* Gomb stílusok */
+.nav-button, .admin-wrapper div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-/* Link stílusok */
+.nav-divider {
+    font-size: 2.5rem;
+    color: #949494;
+    user-select: none;
+    margin: 0 5px;
+}
+
 nav a {
-  text-decoration: none;
-  color: #737373;
-  font-size: 1.8rem;
-  font-weight: 400;
-  display: inline-block;
-  padding: 6px 15px;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  transform: scaleY(1); /* A te stílusod megtartva */
-  white-space: nowrap; /* Ne törjön sort a szöveg a gombon belül */
-}
-
-/* Feltöltés gomb specifikus stílus */
-#upload-button nav a {
-  color: black;
-  font-size: 3.5rem;
-  transform: scaleY(0.75) scaleX(1);
-  transform-origin: right center; /* Hogy ne lógjon ki jobbra scalingnél */
+    text-decoration: none;
+    color: #949494;
+    font-size: 1.55rem;
+    font-weight: 400;
+    cursor: pointer;
+    transition: color 0.3s ease;
+    white-space: nowrap;
 }
 
 nav a:hover {
-  text-decoration: underline;
-  color: #333; /* Sötétebb szín hoverre */
+    text-decoration: underline;
+    color: #333;
 }
 
-/* --- RESZPONZÍV BEÁLLÍTÁSOK --- */
+/* Feltöltés gomb specifikus */
+#upload-button nav a {
+    color: black;
+    font-size: 2rem;
+    display: block;
+}
 
-/* 1. TABLET NÉZET (900px alatt) */
+/* --- MOBIL NÉZET ÉS HAMBURGER MENÜ LOGIKA (900px alatt) --- */
 @media (max-width: 900px) {
-  #nav-upper {
-    gap: 10px;
-  }
-  
-  nav a {
-    font-size: 1.7rem; /* Kicsit kisebb betűk */
-    padding: 5px 10px;
-  }
+    header {
+        padding: 20px;
+        justify-content: flex-end; /* Hamburger jobbra */
+    }
 
-  #upload-button nav a {
-    font-size: 2.5rem; /* A feltöltés gomb is kisebb legyen */
-  }
-}
+    /* Hamburger gomb megjelenítése */
+    #hamburger-btn {
+        display: flex;
+    }
 
-/* 2. MOBIL NÉZET (600px alatt) */
-@media (max-width: 600px) {
-  header {
-    padding: 10px;
-  }
+    /* A menü konténer átalakítása teljes képernyős overlay-é */
+    #nav-menu-container {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 100%;
+        height: 100vh;
+        background-color: rgba(255, 255, 255, 0.98); /* Szinte teljesen átlátszatlan fehér */
+        backdrop-filter: blur(5px); /* Opcionális elmosás */
+        
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 30px;
+        
+        /* Animáció beállítása */
+        transform: translateY(-100%); /* Alapból fent rejtve, vagy translateX(100%) oldalra */
+        opacity: 0;
+        visibility: hidden;
+        transition: transform 0.5s cubic-bezier(0.77, 0, 0.175, 1), 
+                    opacity 0.3s ease,
+                    visibility 0.3s ease;
+        
+        z-index: 1500; /* Hamburger alatt, tartalom felett */
+        padding-bottom: 50px; /* Hely a tartalomnak */
+    }
 
-  /* A felső sáv elemei kerüljenek egymás alá */
-  #nav-upper {
-    gap: 15px;
-    flex-wrap: wrap; /* Ha sok gomb van, törjenek sorba */
-    justify-content: center;
-  }
+    /* Amikor a menü nyitva van (body class) */
+    body.menu-open {
+        overflow: hidden; /* Görgetés tiltása */
+    }
 
-  /* A bal és jobb oldali blokkok teljes szélességűek */
-  #nav-upper-left,
-  #nav-upper-right {
-    width: 100%;
-    gap: 10px;
-  }
+    body.menu-open #nav-menu-container {
+        transform: translateY(0);
+        opacity: 1;
+        visibility: visible;
+    }
 
-  /* A gombok töltsék ki a helyet mobilon */
-  .nav-button {
-    flex: 1 1 100%; /* Minimum 40%-os szélesség, de nőhetnek */
-  }
+    /* Hamburger animáció X-é alakulás */
+    body.menu-open #hamburger-btn span:nth-child(1) {
+        transform: translateY(11px) rotate(45deg);
+        background-color: black;
+    }
+    body.menu-open #hamburger-btn span:nth-child(2) {
+        opacity: 0;
+    }
+    body.menu-open #hamburger-btn span:nth-child(3) {
+        transform: translateY(-10px) rotate(-45deg);
+        background-color: black;
+    }
 
-  nav a {
-    width: 100%;
-    text-align: center;
-    font-size: 1.8rem; /* Olvasható méret */
-    display: block; /* Teljes szélességű kattintható terület */
-    margin: 0;
-  }
+    /* Belső elemek igazítása mobilon */
+    #nav-upper-right {
+        flex-direction: column;
+        gap: 25px;
+        width: 100%;
+        justify-content: center;
+    }
 
-  /* Az alsó sáv (feltöltés) középre kerüljön mobilon */
-  #nav-lower {
-    justify-content: center;
-    padding-right: 0;
-    margin-top: 30px;
-  }
+    .admin-wrapper {
+        flex-direction: column;
+        align-items: center;
+        gap: 25px;
+    }
 
-  #upload-button nav a {
-    font-size: 2.8rem; /* Mobilon is legyen nagy, de ne óriás */
-    transform: scaleY(0.8); /* Kevésbé torzítva mobilon */
-    transform-origin: center;
-  }
+    /* Perjelek eltüntetése mobilon */
+    .nav-divider {
+        display: none;
+    }
+
+    /* Linkek nagyítása mobilon */
+    nav a {
+        font-size: 2rem;
+        color: #333; /* Sötétebb szín mobilon a jobb láthatóságért */
+    }
+
+    #nav-lower {
+        margin-top: 40px;
+        width: auto;
+    }
+
+    #upload-button nav a {
+        font-size: 3rem;
+        border-bottom: 2px solid black; /* Kiemelés mobilon */
+    }
 }

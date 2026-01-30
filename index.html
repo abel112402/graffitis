@@ -92,49 +92,89 @@ function createFilterBtn(val, type, parent) {
 
 // Navigációs gombok és header
 async function setupHeader() {
-  const navUpper = document.createElement('div'); navUpper.id = 'nav-upper';
-  const navUpperLeft = document.createElement('div'); navUpperLeft.id = 'nav-upper-left';
-  const navUpperRight = document.createElement('div'); navUpperRight.id = 'nav-upper-right';
-  navUpper.appendChild(navUpperLeft); navUpper.appendChild(navUpperRight);
-  const navLower = document.createElement('div'); navLower.id = 'nav-lower';
+    const header = document.querySelector('header');
+    
+    // Hamburger gomb létrehozása
+    const hamburger = document.createElement('div');
+    hamburger.id = 'hamburger-btn';
+    hamburger.innerHTML = '<span></span><span></span><span></span>';
+    hamburger.addEventListener('click', toggleMenu);
+    header.appendChild(hamburger);
 
-  const adminLoggedIn = await isAdmin();
+    // Fő navigációs konténer (ebben lesz minden menüpont)
+    const navContainer = document.createElement('div');
+    navContainer.id = 'nav-menu-container';
+    
+    // Felső rész (Login, Random, stb.)
+    const navUpperRight = document.createElement('div'); 
+    navUpperRight.id = 'nav-upper-right';
+    
+    // Admin check
+    const adminLoggedIn = await isAdmin();
 
-  const randomButton = document.createElement('div');
-  randomButton.classList.add('nav-button');
-  randomButton.innerHTML = '<nav><a onclick="goToRandomGraffiti()">véletlenszerű</a></nav>';
-  navUpperLeft.appendChild(randomButton);
+    const perDivider = document.createElement('div');
+    perDivider.classList.add('nav-divider');
+    perDivider.innerText = '/';
+    
+    const randomButton = document.createElement('div');
+    randomButton.classList.add('nav-button');
+    randomButton.innerHTML = '<nav><a onclick="goToRandomGraffiti(); closeMenu()">véletlenszerű</a></nav>';
+    navUpperRight.appendChild(randomButton);
+    navUpperRight.appendChild(perDivider.cloneNode(true));
 
-  const lastButton = document.createElement('div');
-  lastButton.classList.add('nav-button');
-  lastButton.innerHTML = '<nav><a onclick="setLastMode()">legutóbbi</a></nav>';
-  navUpperLeft.appendChild(lastButton);
+    const lastButton = document.createElement('div');
+    lastButton.classList.add('nav-button');
+    lastButton.innerHTML = '<nav><a onclick="setLastMode(); closeMenu()">legutóbbi</a></nav>';
+    navUpperRight.appendChild(lastButton);
+    navUpperRight.appendChild(perDivider.cloneNode(true));
 
-  const whatButton = document.createElement('div');
-  whatButton.classList.add('nav-button');
-  whatButton.innerHTML = '<nav><a onclick="">mi ez</a></nav>';
-  navUpperRight.appendChild(whatButton);
+    const whatButton = document.createElement('div');
+    whatButton.classList.add('nav-button');
+    whatButton.innerHTML = '<nav><a onclick="closeMenu()">mi ez</a></nav>'; // Itt nincs href, ahogy az eredetiben se volt
+    navUpperRight.appendChild(whatButton);
 
-  if (!adminLoggedIn) {
-    const loginButton = document.createElement('div');
-    loginButton.innerHTML = '<nav><a href="./login.html">///</a></nav>';
-    navUpper.appendChild(loginButton);
-  } else {
-    const adminProfile = document.createElement('div');
-    adminProfile.innerHTML = '<nav><a href="./admin.html">Admin</a></nav>';
-    navUpper.appendChild(adminProfile);
-    const logoutButton = document.createElement('div');
-    logoutButton.innerHTML = '<nav><a onclick="logout()">×××</a></nav>';
-    navUpper.appendChild(logoutButton);
-  }
+    if (!adminLoggedIn) {
+        const loginButton = document.createElement('div');
+        loginButton.classList.add('nav-button');
+        loginButton.innerHTML = '<nav><a href="./login.html">///</a></nav>';
+        navUpperRight.appendChild(loginButton);
+    } else {
+        const adminWrapper = document.createElement('div');
+        adminWrapper.classList.add('admin-wrapper'); // Wrapper a stílusozáshoz
+        
+        const adminProfile = document.createElement('div');
+        adminProfile.innerHTML = '<nav><a href="./admin.html">Admin</a></nav>';
+        adminWrapper.appendChild(adminProfile);
+        
+        const logoutButton = document.createElement('div');
+        logoutButton.innerHTML = '<nav><a onclick="logout()">×××</a></nav>';
+        adminWrapper.appendChild(logoutButton);
+        
+        navUpperRight.appendChild(adminWrapper);
+    }
 
-  const uploadButton = document.createElement('div');
-  uploadButton.id = 'upload-button';
-  uploadButton.innerHTML = '<nav><a href="./upload.html">feltöltés</a></nav>';
-  navLower.appendChild(uploadButton);
+    // Alsó rész (Feltöltés) - most már a navContainer része lesz a könnyebb mobilos kezelésért
+    const navLower = document.createElement('div'); 
+    navLower.id = 'nav-lower';
+    const uploadButton = document.createElement('div');
+    uploadButton.id = 'upload-button';
+    uploadButton.innerHTML = '<nav><a href="./upload.html">feltöltés</a></nav>';
+    navLower.appendChild(uploadButton);
 
-  document.querySelector('header').appendChild(navUpper);
-  document.querySelector('header').appendChild(navLower);
+    // Mindent hozzáadunk a közös konténerhez
+    navContainer.appendChild(navUpperRight);
+    navContainer.appendChild(navLower);
+    
+    header.appendChild(navContainer);
+}
+
+// Menü nyitás/zárás funkciók
+window.toggleMenu = function() {
+    document.body.classList.toggle('menu-open');
+}
+
+window.closeMenu = function() {
+    document.body.classList.remove('menu-open');
 }
 
 window.goToRandomGraffiti = function() {
@@ -185,29 +225,24 @@ function renderList(list) {
     const filtersPanel = document.getElementById('main-container-left');
     const isMobile = window.innerWidth <= 900;
 
-    // 1. LÉPÉS: A szűrő panelt biztonságba helyezzük a törlés előtt
-    // Ha a containerben van (mert mobilon vagyunk), vegyük ki onnan
+    // 1. LÉPÉS: Panel biztonságba helyezése
     if (container.contains(filtersPanel)) {
         mainContainer.insertBefore(filtersPanel, container);
     }
     
-    // 2. LÉPÉS: Törlés és alaphelyzet
+    // 2. LÉPÉS: Törlés
     container.innerHTML = '';
     container.style.height = 'auto'; 
     
-    // 3. LÉPÉS: Panel elhelyezése a nézettől függően
+    // 3. LÉPÉS: Panel elhelyezése
     if (isMobile) {
-        // Mobilon: A szűrő panel bekerül a lista konténerbe (az elejére)
-        // Így az első oszlop tetején lesz
         container.appendChild(filtersPanel);
-        container.style.columnCount = '2'; // 2 oszlop kényszerítése
+        container.style.columnCount = '2';
     } else {
-        // Desktopon: A szűrő panel marad a fő konténerben, a lista előtt (visszakerül a helyére)
-        // Ezt a lépést már megtettük az 1. lépésben, de biztosítjuk a Desktop oszlopokat
         container.style.columnCount = '4';
     }
 
-    // 4. LÉPÉS: Graffiti elemek generálása (ugyanaz, mint eddig)
+    // 4. LÉPÉS: Graffiti elemek generálása
     if (currentMode === 'alphabetical') {
         list.sort((a, b) => a.name.localeCompare(b.name, 'hu', { sensitivity: 'base' }));
         const groups = {};
@@ -233,7 +268,15 @@ function renderList(list) {
                 const li = document.createElement('li');
                 const a = document.createElement('a');
                 a.href = `graffiti.html?slug=${encodeURIComponent(item.slug)}`;
-                a.innerText = item.name;
+                
+                // --- VÁLTOZTATÁS ITT: Nagybetűsítés ---
+                if (item.name) {
+                    a.innerText = item.name.charAt(0).toUpperCase() + item.name.slice(1);
+                } else {
+                    a.innerText = "Névtelen";
+                }
+                // -------------------------------------
+
                 li.appendChild(a);
                 ul.appendChild(li);
             });
@@ -250,23 +293,26 @@ function renderList(list) {
             div.classList.add('simple-item');
             const a = document.createElement('a');
             a.href = `graffiti.html?slug=${encodeURIComponent(item.slug)}`;
-            a.innerText = item.name;
+            
+            // --- VÁLTOZTATÁS ITT IS: Nagybetűsítés ---
+            if (item.name) {
+                a.innerText = item.name.charAt(0).toUpperCase() + item.name.slice(1);
+            } else {
+                a.innerText = "Névtelen";
+            }
+            // ----------------------------------------
+
             a.style.display = 'block';
             div.appendChild(a);
             container.appendChild(div);
         });
     }
 
-    // 5. LÉPÉS: Magasság kalkuláció (Duplázás)
-    // Csak a magasságot számoljuk, az oszlopok száma már be van állítva (2 vagy 5)
-    
-    // Alap magasság számítása
+    // 5. LÉPÉS: Magasság kalkuláció
     const rect = container.getBoundingClientRect();
     const windowHeight = window.innerHeight;
     let fixedHeight = Math.max(windowHeight - rect.top - 40, 300);
     
-    // Ha mobilon vagyunk, hozzá kell adni a szűrő panel magasságát is a becsléshez,
-    // különben túl kicsi lesz a kezdő magasság és sokat kell duplázni
     if (isMobile) {
         const filterHeight = filtersPanel.getBoundingClientRect().height;
         fixedHeight += filterHeight;
@@ -275,7 +321,6 @@ function renderList(list) {
     container.style.columnFill = 'auto';
     container.style.height = `${fixedHeight}px`;
 
-    // Duplázás ha kifolyik
     let safetyCounter = 40;
     while (container.scrollWidth > container.clientWidth + 5 && safetyCounter > 0) {
         fixedHeight = fixedHeight * 1.2;

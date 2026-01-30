@@ -10,7 +10,7 @@ html {
 #main-container {
   display: flex;
   gap: 20px;
-  padding: 20px;
+  padding: 20px 20px 20px 0px;
   box-sizing: border-box;
 }
 
@@ -23,6 +23,7 @@ html {
   flex-direction: column;
   gap: 0px;
   color: #4b4b4b;
+  transform: translateY(-5%);
 }
 
 #main-container-left h3 {
@@ -116,9 +117,7 @@ html {
   color: #4b4b4b;
   /*white-space: nowrap;*/  /* Eltávolítva, hogy a hosszú nevek törhessenek */
   display: block; /* Fontos a helyes tördeléshez */
-  hyphens: auto;
-  overflow-wrap: break-word;
-  word-break: normal;
+  margin: 10px 0;
 }
 
 .simple-item a:hover, .letter-group ul li a:hover {
@@ -128,7 +127,7 @@ html {
 
 /* Reszponzivitás megtartása */
 @media (max-width: 1200px) {
-  #main-container-left { width: 25vw; }
+  #main-container-left { width: 10vw; }
 }
 
 @media (max-width: 900px) {
@@ -148,11 +147,11 @@ html {
   #main-container-left {
     width: 100% !important;     /* Töltse ki az oszlop szélességét */
     min-width: 0 !important;
-    margin-bottom: 30px;        /* Térköz a szűrők és az első graffiti között */
+    margin-bottom: 0;        /* Térköz a szűrők és az első graffiti között */
     break-inside: avoid;        /* Ne törjön szét a szűrődoboz oszlopok között */
     display: block;             /* Biztos ami biztos */
     border-bottom: 2px solid #ccc; /* Kis elválasztó vizuálisan */
-    padding-bottom: 20px;
+    padding-bottom: 0;
   }
   
   /* Ha a szűrők vízszintesen voltak (előző kód maradvány), most álljanak vissza függőlegesre */

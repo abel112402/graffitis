@@ -64,7 +64,10 @@ async function loadDetail() {
   
 
   // 2. Alapadatok
-  document.getElementById('title').innerText = data.name.charAt(0).toUpperCase() + data.name.slice(1);
+  const formattedName = data.name.charAt(0).toUpperCase() + data.name.slice(1);
+  document.title = formattedName;
+
+  document.getElementById('title').innerText = formattedName;
   document.getElementById('year-display').innerText = data.year ? `${data.year}` : '';
 
   // 3. Leírás
@@ -91,7 +94,7 @@ async function loadDetail() {
     }
   }
 
-  // 5. Képek betöltése
+// 5. Képek betöltése
   const imagesContainer = document.getElementById('images');
   
   if (data.image_path && data.image_path.length > 0) {
@@ -100,9 +103,19 @@ async function loadDetail() {
         .from('graffiti-images')
         .getPublicUrl(path);
 
+      // --- OPTIMALIZÁLÁS: Supabase transform (ha támogatja a projekted) ---
+      // Ha a Supabase projektedben be van kapcsolva az Image Transformation,
+      // akkor használhatsz ilyet: `${publicUrlData.publicUrl}?width=800&format=webp`
+      // Ha nincs (Free tier alapbeállítás), marad az eredeti URL.
+      const imageUrl = publicUrlData.publicUrl; 
+
       const img = document.createElement('img');
-      img.src = publicUrlData.publicUrl;
-      // Klikk esemény közvetlenül a létrehozáskor
+      img.src = imageUrl;
+      
+      // --- SEBESSÉG JAVÍTÁS 1: Lazy loading ---
+      // Ez megmondja a böngészőnek, hogy ne töltse le, amíg nem görget oda a user
+      img.loading = "lazy"; 
+      
       img.addEventListener('click', toggleImageSize);
       imagesContainer.appendChild(img);
     });

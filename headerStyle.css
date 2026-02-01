@@ -66,7 +66,7 @@ header {
 }
 
 .nav-divider {
-    font-size: 2.5rem;
+    font-size: 1.35rem;
     color: #949494;
     user-select: none;
     margin: 0 5px;
@@ -75,7 +75,7 @@ header {
 nav a {
     text-decoration: none;
     color: #949494;
-    font-size: 1.55rem;
+    font-size: 1.35rem;
     font-weight: 400;
     cursor: pointer;
     transition: color 0.3s ease;
@@ -90,7 +90,7 @@ nav a:hover {
 /* Feltöltés gomb specifikus */
 #upload-button nav a {
     color: black;
-    font-size: 2rem;
+    font-size: 1.55rem;
     display: block;
 }
 

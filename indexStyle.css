@@ -17,13 +17,13 @@ html {
 /* Bal oldal maradt a régi */
 #main-container-left {
   margin-top: 0;
-  width: 10vw;
+  width: 15vw;
   min-width: 130px;
   display: flex;
   flex-direction: column;
   gap: 0px;
   color: #4b4b4b;
-  transform: translateY(-5%);
+  transform: translateY(-3%);
 }
 
 #main-container-left h3 {
@@ -38,6 +38,7 @@ html {
   display: block;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  margin: 6px 0;
 }
 .filter-btn.active-filter {
   text-decoration: underline;
@@ -127,7 +128,8 @@ html {
 
 /* Reszponzivitás megtartása */
 @media (max-width: 1200px) {
-  #main-container-left { width: 10vw; }
+  #main-container-left { width: 18vw;
+  }
 }
 
 @media (max-width: 900px) {
@@ -152,6 +154,7 @@ html {
     display: block;             /* Biztos ami biztos */
     border-bottom: 2px solid #ccc; /* Kis elválasztó vizuálisan */
     padding-bottom: 0;
+    transform: translateY(0%);
   }
   
   /* Ha a szűrők vízszintesen voltak (előző kód maradvány), most álljanak vissza függőlegesre */

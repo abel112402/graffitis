@@ -10,6 +10,14 @@
   .active-filter {
       text-decoration: underline;
   }
+  .expand-btn {
+      font-weight: bold;
+      cursor: pointer;
+      color: #555; /* Opcionális: kicsit más szín a gomboknak */
+  }
+  .expand-btn:hover {
+      color: #000;
+  }
 </style>
 </head>
 <body>
@@ -66,6 +74,8 @@ async function loadIndex() {
   const years = [...new Set(data.map(g => g.year).filter(Boolean))].sort((a,b)=>a-b);
   const cities = [...new Set(data.map(g => g.city).filter(Boolean))]
     .sort((a, b) => a.localeCompare(b, 'hu', { sensitivity: 'base' }));
+  
+  // Kategóriák rendezése
   const categories = [
     ...new Set(
       data.flatMap(g => g.category_id || []).map(id => categoryMap[id]).filter(Boolean)
@@ -74,7 +84,58 @@ async function loadIndex() {
 
   years.forEach(y => createFilterBtn(y, 'year', yearList));
   cities.forEach(c => createFilterBtn(c, 'city', cityList));
-  categories.forEach(c => createFilterBtn(c, 'category', categoryList));
+
+  // --- MÓDOSÍTÁS: Dinamikus kategória renderelés (Nyitás/Zárás) ---
+  
+  const renderCategoryButtons = (isExpanded) => {
+      // 1. Meglévő gombok törlése a listából (a H3 címet békén hagyjuk)
+      const existingBtns = categoryList.querySelectorAll('span.filter-btn');
+      existingBtns.forEach(btn => btn.remove());
+
+      const CATEGORY_LIMIT = 20;
+      
+      // 2. Eldöntjük, mennyi elemet mutassunk
+      // Ha nyitva van: összes, ha csukva: csak a limit
+      const listToRender = isExpanded ? categories : categories.slice(0, CATEGORY_LIMIT);
+
+      // 3. Gombok generálása
+      listToRender.forEach(c => {
+          createFilterBtn(c, 'category', categoryList);
+      });
+
+      // 4. Vezérlő gomb hozzáadása (... vagy X), ha több van mint a limit
+      if (categories.length > CATEGORY_LIMIT) {
+          const toggleBtn = document.createElement('span');
+          toggleBtn.classList.add('filter-btn', 'expand-btn');
+          
+          if (isExpanded) {
+              // Ha nyitva van -> Záró gomb (X)
+              toggleBtn.innerText = 'X'; 
+              toggleBtn.title = "Lista összecsukása";
+              toggleBtn.addEventListener('click', () => renderCategoryButtons(false));
+          } else {
+              // Ha csukva van -> Nyitó gomb (...)
+              toggleBtn.innerText = '...';
+              toggleBtn.title = "Összes mutatása";
+              toggleBtn.addEventListener('click', () => renderCategoryButtons(true));
+          }
+          categoryList.appendChild(toggleBtn);
+      }
+
+      // 5. Ha van aktív szűrő, azt újra meg kell jelölni (mert újrageneráltuk a DOM-ot)
+      if (activeFilter.type === 'category' && activeFilter.value) {
+          const activeBtn = Array.from(categoryList.querySelectorAll('.filter-btn'))
+              .find(btn => btn.dataset.value === activeFilter.value);
+          if (activeBtn) {
+              activeBtn.classList.add('active-filter');
+          }
+      }
+  };
+
+  // Indítás alapállapotban (csukva)
+  renderCategoryButtons(false);
+
+  // --- MÓDOSÍTÁS VÉGE ---
 
   applyFilters();
   setupHeader();
@@ -130,7 +191,7 @@ async function setupHeader() {
 
     const whatButton = document.createElement('div');
     whatButton.classList.add('nav-button');
-    whatButton.innerHTML = '<nav><a onclick="closeMenu()">mi ez</a></nav>'; // Itt nincs href, ahogy az eredetiben se volt
+    whatButton.innerHTML = '<nav><a onclick="openMiez();closeMenu()">mi ez</a></nav>'; 
     navUpperRight.appendChild(whatButton);
 
     if (!adminLoggedIn) {
@@ -153,7 +214,7 @@ async function setupHeader() {
         navUpperRight.appendChild(adminWrapper);
     }
 
-    // Alsó rész (Feltöltés) - most már a navContainer része lesz a könnyebb mobilos kezelésért
+    // Alsó rész (Feltöltés)
     const navLower = document.createElement('div'); 
     navLower.id = 'nav-lower';
     const uploadButton = document.createElement('div');
@@ -172,7 +233,9 @@ async function setupHeader() {
 window.toggleMenu = function() {
     document.body.classList.toggle('menu-open');
 }
-
+window.openMiez = function() {
+    location.href = '/graffitis/miez.html';
+}
 window.closeMenu = function() {
     document.body.classList.remove('menu-open');
 }
@@ -218,7 +281,6 @@ function applyFilters() {
   renderList(filtered);
 }
 
-// ---- MÓDOSÍTOTT RENDERLIST FÜGGVÉNY A MOBIL NÉZETHEZ ----
 function renderList(list) {
     const container = document.getElementById('main-container-right');
     const mainContainer = document.getElementById('main-container');
@@ -269,13 +331,11 @@ function renderList(list) {
                 const a = document.createElement('a');
                 a.href = `graffiti.html?slug=${encodeURIComponent(item.slug)}`;
                 
-                // --- VÁLTOZTATÁS ITT: Nagybetűsítés ---
                 if (item.name) {
                     a.innerText = item.name.charAt(0).toUpperCase() + item.name.slice(1);
                 } else {
                     a.innerText = "Névtelen";
                 }
-                // -------------------------------------
 
                 li.appendChild(a);
                 ul.appendChild(li);
@@ -294,13 +354,11 @@ function renderList(list) {
             const a = document.createElement('a');
             a.href = `graffiti.html?slug=${encodeURIComponent(item.slug)}`;
             
-            // --- VÁLTOZTATÁS ITT IS: Nagybetűsítés ---
             if (item.name) {
                 a.innerText = item.name.charAt(0).toUpperCase() + item.name.slice(1);
             } else {
                 a.innerText = "Névtelen";
             }
-            // ----------------------------------------
 
             a.style.display = 'block';
             div.appendChild(a);

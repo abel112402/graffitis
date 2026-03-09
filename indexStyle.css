@@ -23,6 +23,7 @@ html {
   flex-direction: column;
   gap: 0px;
   color: #4b4b4b;
+  z-index: 10;
   transform: translateY(-3%);
 }
 
@@ -40,8 +41,15 @@ html {
   transition: background-color 0.2s ease;
   margin: 6px 0;
 }
+
 .filter-btn.active-filter {
   text-decoration: underline;
+}
+
+/* ÚJ: Az 'X' (ami a <b> tagben van) ne legyen aláhúzva */
+.filter-btn.active-filter b {
+  display: inline-block; /* Ez töri meg a szülő aláhúzását */
+  text-decoration: none;
 }
 
 #city-list h3, #category-list h3 { margin-top: 20px; margin-bottom: 10px; font-size: 1.9rem;}
@@ -112,11 +120,10 @@ html {
     page-break-inside: avoid;
 }
 
-.simple-item a, .letter-group ul li a {
+.simple-item a, .letter-group ul li a, #clear-filters-link {
   font-size: 1.35rem;
   text-decoration: none;
   color: #4b4b4b;
-  /*white-space: nowrap;*/  /* Eltávolítva, hogy a hosszú nevek törhessenek */
   display: block; /* Fontos a helyes tördeléshez */
   margin: 10px 0;
 }
@@ -124,7 +131,6 @@ html {
 .simple-item a:hover, .letter-group ul li a:hover {
   text-decoration:line-through;
 }
-
 
 /* Reszponzivitás megtartása */
 @media (max-width: 1200px) {

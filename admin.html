@@ -39,9 +39,11 @@ const header = document.querySelector('header');
 header.innerHTML = `
 <div id="nav-upper">
   <div id="nav-upper-left"></div>
-  <div id="nav-upper-right"></div>
+  <div id="nav-upper-right">
+    
+  </div>
   <nav><a href="./">Főoldal</a></nav>
-  <nav><a href="./" onclick="logout()">Kijelentkezés</a></nav>
+    <nav><a href="./" onclick="logout()">Kijelentkezés</a></nav>
 </div>
 <div id="nav-lower">
   <nav id="upload-button"><a href="./upload.html">feltöltés</a></nav>
@@ -51,7 +53,7 @@ header.innerHTML = `
 const adminLoggedIn = await isAdmin();
 if (!adminLoggedIn) {
   alert('Nincs admin jogosultságod.');
-  location.href = '/graffitis/index.html';
+  location.href = './index.html';
 } else {
   document.getElementById('adminSection').style.display = 'block';
 

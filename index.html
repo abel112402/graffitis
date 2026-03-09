@@ -6,19 +6,7 @@
 <link rel="stylesheet" href="headerStyle.css">
 <link rel="stylesheet" href="indexStyle.css">
 <title>Kezdőlap</title>
-<style>
-  .active-filter {
-      text-decoration: underline;
-  }
-  .expand-btn {
-      font-weight: bold;
-      cursor: pointer;
-      color: #555; /* Opcionális: kicsit más szín a gomboknak */
-  }
-  .expand-btn:hover {
-      color: #000;
-  }
-</style>
+
 </head>
 <body>
 <header></header>
@@ -41,7 +29,7 @@ import isAdmin from './isAdmin.js';
 window.logout = async function logout() {
   await supabase.auth.signOut();
   alert('Kijelentkeztél.');
-  location.href = '/graffitis/index.html';
+  location.href = './index.html';
 }
 
 let graffitiData = [];
@@ -85,36 +73,28 @@ async function loadIndex() {
   years.forEach(y => createFilterBtn(y, 'year', yearList));
   cities.forEach(c => createFilterBtn(c, 'city', cityList));
 
-  // --- MÓDOSÍTÁS: Dinamikus kategória renderelés (Nyitás/Zárás) ---
-  
+  // --- Dinamikus kategória renderelés (Nyitás/Zárás) ---
   const renderCategoryButtons = (isExpanded) => {
-      // 1. Meglévő gombok törlése a listából (a H3 címet békén hagyjuk)
       const existingBtns = categoryList.querySelectorAll('span.filter-btn');
       existingBtns.forEach(btn => btn.remove());
 
       const CATEGORY_LIMIT = 20;
       
-      // 2. Eldöntjük, mennyi elemet mutassunk
-      // Ha nyitva van: összes, ha csukva: csak a limit
       const listToRender = isExpanded ? categories : categories.slice(0, CATEGORY_LIMIT);
 
-      // 3. Gombok generálása
       listToRender.forEach(c => {
           createFilterBtn(c, 'category', categoryList);
       });
 
-      // 4. Vezérlő gomb hozzáadása (... vagy X), ha több van mint a limit
       if (categories.length > CATEGORY_LIMIT) {
           const toggleBtn = document.createElement('span');
           toggleBtn.classList.add('filter-btn', 'expand-btn');
           
           if (isExpanded) {
-              // Ha nyitva van -> Záró gomb (X)
               toggleBtn.innerText = 'X'; 
               toggleBtn.title = "Lista összecsukása";
               toggleBtn.addEventListener('click', () => renderCategoryButtons(false));
           } else {
-              // Ha csukva van -> Nyitó gomb (...)
               toggleBtn.innerText = '...';
               toggleBtn.title = "Összes mutatása";
               toggleBtn.addEventListener('click', () => renderCategoryButtons(true));
@@ -122,20 +102,18 @@ async function loadIndex() {
           categoryList.appendChild(toggleBtn);
       }
 
-      // 5. Ha van aktív szűrő, azt újra meg kell jelölni (mert újrageneráltuk a DOM-ot)
+      // Aktív szűrő vizuális visszaállítása újrageneráláskor
       if (activeFilter.type === 'category' && activeFilter.value) {
           const activeBtn = Array.from(categoryList.querySelectorAll('.filter-btn'))
               .find(btn => btn.dataset.value === activeFilter.value);
           if (activeBtn) {
               activeBtn.classList.add('active-filter');
+              activeBtn.innerHTML = activeBtn.dataset.originalText + ' <b>X</b>';
           }
       }
   };
 
-  // Indítás alapállapotban (csukva)
   renderCategoryButtons(false);
-
-  // --- MÓDOSÍTÁS VÉGE ---
 
   applyFilters();
   setupHeader();
@@ -145,8 +123,16 @@ function createFilterBtn(val, type, parent) {
     const btn = document.createElement('span');
     btn.classList.add('filter-btn');
     btn.dataset.filter = type;
+    if (type === 'city') {
+        btn.classList.add("city-filter");
+    }
     btn.dataset.value = val;
-    btn.innerText = type === 'category' ? val.toUpperCase() : val;
+    
+    // Eltároljuk az eredeti szöveget, hogy később vissza tudjuk állítani az X nélkülire
+    const originalText = type === 'category' ? val.toUpperCase() : val;
+    btn.dataset.originalText = originalText;
+    btn.innerText = originalText;
+    
     btn.addEventListener('click', handleFilterClick);
     parent.appendChild(btn);
 }
@@ -162,15 +148,14 @@ async function setupHeader() {
     hamburger.addEventListener('click', toggleMenu);
     header.appendChild(hamburger);
 
-    // Fő navigációs konténer (ebben lesz minden menüpont)
+    // Fő navigációs konténer
     const navContainer = document.createElement('div');
     navContainer.id = 'nav-menu-container';
     
-    // Felső rész (Login, Random, stb.)
+    // Felső rész
     const navUpperRight = document.createElement('div'); 
     navUpperRight.id = 'nav-upper-right';
     
-    // Admin check
     const adminLoggedIn = await isAdmin();
 
     const perDivider = document.createElement('div');
@@ -201,7 +186,7 @@ async function setupHeader() {
         navUpperRight.appendChild(loginButton);
     } else {
         const adminWrapper = document.createElement('div');
-        adminWrapper.classList.add('admin-wrapper'); // Wrapper a stílusozáshoz
+        adminWrapper.classList.add('admin-wrapper'); 
         
         const adminProfile = document.createElement('div');
         adminProfile.innerHTML = '<nav><a href="./admin.html">Admin</a></nav>';
@@ -214,7 +199,7 @@ async function setupHeader() {
         navUpperRight.appendChild(adminWrapper);
     }
 
-    // Alsó rész (Feltöltés)
+    // Alsó rész
     const navLower = document.createElement('div'); 
     navLower.id = 'nav-lower';
     const uploadButton = document.createElement('div');
@@ -222,7 +207,6 @@ async function setupHeader() {
     uploadButton.innerHTML = '<nav><a href="./upload.html">feltöltés</a></nav>';
     navLower.appendChild(uploadButton);
 
-    // Mindent hozzáadunk a közös konténerhez
     navContainer.appendChild(navUpperRight);
     navContainer.appendChild(navLower);
     
@@ -234,36 +218,60 @@ window.toggleMenu = function() {
     document.body.classList.toggle('menu-open');
 }
 window.openMiez = function() {
-    location.href = '/graffitis/miez.html';
+    location.href = './miez.html';
 }
 window.closeMenu = function() {
     document.body.classList.remove('menu-open');
 }
 
 window.goToRandomGraffiti = function() {
-    if (graffitiData.length === 0) return alert('Nincs megjeleníthető graffiti.');
-    const randomIndex = Math.floor(Math.random() * graffitiData.length);
-    location.href = `graffiti.html?slug=${encodeURIComponent(graffitiData[randomIndex].slug)}`;
+  if (graffitiData.length === 0) return alert('Nincs megjeleníthető graffiti.');
+  const randomIndex = Math.floor(Math.random() * graffitiData.length);
+  location.href = `graffiti.html?slug=${encodeURIComponent(graffitiData[randomIndex].slug)}&from=random&main=true`;
 }
 
 window.setLastMode = function() {
   currentMode = 'latest';
+  activeFilter = { type: null, value: null }; 
+  
+  // Visszaállítjuk minden gomb eredeti szövegét és levesszük az aktív stílust
+  document.querySelectorAll('.filter-btn').forEach(b => {
+      b.classList.remove('active-filter');
+      if (b.dataset.originalText) {
+          b.innerHTML = b.dataset.originalText;
+      }
+  });
+  
   applyFilters(); 
 }
 
 function handleFilterClick(e) {
+  location.href = '#';
   const btn = e.currentTarget;
   const type = btn.dataset.filter;
   const value = btn.dataset.value;
 
   if (activeFilter.type === type && activeFilter.value === value) {
+      // Ha már aktív volt és rákattintottak: kikapcsoljuk
       activeFilter = { type: null, value: null };
       btn.classList.remove('active-filter');
+      btn.innerHTML = btn.dataset.originalText; // Szöveg visszaállítása X nélkülire
   } else {
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active-filter'));
+      // Ha egy újra kattintottak: bekapcsoljuk
+      // 1. Az összes eddigi gomb szövegének és stílusának visszaállítása
+      document.querySelectorAll('.filter-btn').forEach(b => {
+          b.classList.remove('active-filter');
+          if (b.dataset.originalText) {
+              b.innerHTML = b.dataset.originalText;
+          }
+      });
+      
+      // 2. Az új gomb aktívvá tétele és az X hozzáadása
       activeFilter = { type: type, value: value };
       btn.classList.add('active-filter');
+      btn.innerHTML = btn.dataset.originalText + ' <b>X</b>';
   }
+
   applyFilters();
 }
 
@@ -287,16 +295,13 @@ function renderList(list) {
     const filtersPanel = document.getElementById('main-container-left');
     const isMobile = window.innerWidth <= 900;
 
-    // 1. LÉPÉS: Panel biztonságba helyezése
     if (container.contains(filtersPanel)) {
         mainContainer.insertBefore(filtersPanel, container);
     }
     
-    // 2. LÉPÉS: Törlés
     container.innerHTML = '';
     container.style.height = 'auto'; 
     
-    // 3. LÉPÉS: Panel elhelyezése
     if (isMobile) {
         container.appendChild(filtersPanel);
         container.style.columnCount = '2';
@@ -304,7 +309,6 @@ function renderList(list) {
         container.style.columnCount = '4';
     }
 
-    // 4. LÉPÉS: Graffiti elemek generálása
     if (currentMode === 'alphabetical') {
         list.sort((a, b) => a.name.localeCompare(b.name, 'hu', { sensitivity: 'base' }));
         const groups = {};
@@ -366,7 +370,6 @@ function renderList(list) {
         });
     }
 
-    // 5. LÉPÉS: Magasság kalkuláció
     const rect = container.getBoundingClientRect();
     const windowHeight = window.innerHeight;
     let fixedHeight = Math.max(windowHeight - rect.top - 40, 300);

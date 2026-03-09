@@ -8,6 +8,8 @@ header {
     width: 100%;
     position: relative;
     z-index: 1000;
+    flex-direction: column;
+    z-index: 1;
 }
 
 /* Hamburger gomb (alapból rejtett desktopon) */
@@ -52,10 +54,17 @@ header {
 }
 
 /* Alsó sor (Feltöltés) */
+#nav-upper {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+    gap: 15px;
+}
 #nav-lower {
     margin-top: 20px;
     display: flex;
     justify-content: flex-end;
+    width: 100%;
 }
 
 /* Gomb stílusok */

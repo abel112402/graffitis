@@ -10,6 +10,8 @@
 
 <nav id="home-button">
   <a href="./">← Vissza a főoldalra</a>
+  <a id="prev-random-btn" style="display: none; cursor: pointer; margin-left: 20px;">Előző</a>
+  <a id="next-random-btn" style="display: none; cursor: pointer; margin-left: 20px;">Következő</a>
 </nav>
 
 <div id="admin-actions"></div>
@@ -38,8 +40,43 @@ async function checkAdmin() {
 }
 
 async function loadDetail() {
-  const slug = new URLSearchParams(location.search).get('slug');
+  const urlParams = new URLSearchParams(location.search);
+  const slug = urlParams.get('slug');
   if (!slug) { document.body.innerText = 'Nincs megadva.'; return; }
+  const isFromRandom = urlParams.get('from') === 'random'; // Ellenőrizzük, randomból jött-e
+  const isFromMain = urlParams.get('main') === 'true'; // Ellenőrizzük, hogy a főoldalról jött-e (random gombbal)
+
+  //"Következő véletlenszerű" gomb logikája ---
+  if (isFromRandom) {
+    const nextRandomBtn = document.getElementById('next-random-btn');
+    const prevRandomBtn = document.getElementById('prev-random-btn');
+    nextRandomBtn.style.display = 'inline-block'; // Gomb megjelenítése
+    if (isFromMain) {
+      prevRandomBtn.style.display = 'none'; // Ha főoldalról jött, nincs előző random
+    } else {
+      prevRandomBtn.style.display = 'inline-block'; // Egyébként megjelenítjük az előző gombot
+    }
+    
+    nextRandomBtn.onclick = async () => {
+      // Lekérjük az összes elfogadott graffiti slug-ját a Supabase-ből
+      const { data: allGraffitis, error: randomErr } = await supabase
+        .from('graffiti')
+        .select('slug')
+        .eq('accepted', true);
+        
+      if (randomErr || !allGraffitis || allGraffitis.length === 0) {
+        alert('Nem sikerült új graffitit betölteni.');
+        return;
+      }
+      
+      // Választunk egy újat véletlenszerűen, és újratöltjük az oldalt a paraméter megtartásával
+      const randomIndex = Math.floor(Math.random() * allGraffitis.length);
+      location.href = `graffiti.html?slug=${encodeURIComponent(allGraffitis[randomIndex].slug)}&from=random`;
+    };
+    prevRandomBtn.onclick = () => {
+      history.back(); // Visszalépés az előző oldalra, ahol a random graffitit látta a user
+    };
+  }
 
   const { data, error } = await supabase
     .from('graffiti')
@@ -139,7 +176,7 @@ async function loadDetail() {
       const { error: dbErr } = await supabase.from('graffiti').delete().eq('id', data.id);
 
       if (dbErr) alert('Hiba: ' + dbErr.message);
-      else { alert('Törölve.'); location.href = '/graffitis/index.html'; }
+      else { alert('Törölve.'); location.href = './index.html'; }
     };
     adminDiv.appendChild(deleteBtn);
   }

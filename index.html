@@ -5,11 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="headerStyle.css">
 <link rel="stylesheet" href="indexStyle.css">
+<script defer="defer" type="text/javascript" src="https://app.easyling.com/client/kqf1ryaa/0/stub.js"></script>
 <title>Kezdőlap</title>
 
 </head>
 <body>
-<header></header>
+<header><div class="lang-select-div nav-button">nyelv<span class="el-dropdown"></span></div></header>
 
 <div id="main-container">
   <div id="main-container-left">
@@ -162,6 +163,10 @@ async function setupHeader() {
     perDivider.classList.add('nav-divider');
     perDivider.innerText = '/';
     
+    const languageSelector = document.querySelector('.lang-select-div');
+    languageSelector.classList.add('language-selector-div');
+    navUpperRight.appendChild(languageSelector);
+
     const randomButton = document.createElement('div');
     randomButton.classList.add('nav-button');
     randomButton.innerHTML = '<nav><a onclick="goToRandomGraffiti(); closeMenu()">véletlenszerű</a></nav>';

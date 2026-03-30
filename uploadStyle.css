@@ -17,6 +17,7 @@ html {
   justify-content: flex-end;
   margin-bottom: 20px;
   padding-right: 10vw;
+  gap: 10px;
 }
 #home-button a {
   text-decoration: none;
@@ -28,7 +29,20 @@ html {
   transition: background-color 0.3s ease;
   font-weight: bold;
 }
+#home-button  {
+  background-color: white;
+}
+.lang-select-div {
+    color: #333;
+    background-color: white;;
+    font-size: 0.9rem;
+    font-weight: bold;
+}
 
+.el-dropdown{
+    padding-bottom: 0.5rem;
+    cursor: pointer;
+}
 #home-button a:hover {
   background-color: #dcdcdc;
 }

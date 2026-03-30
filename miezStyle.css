@@ -27,7 +27,13 @@ body {
     position: relative; /* Pozícionálást teszünk rá, hogy működjön a z-index */
     z-index: 10;        /* Magasabb szintre emeljük, hogy a tartalom fölött legyen */
 }
-
+.lang-select-div {
+    margin-right: 10px;
+    font-weight: bold;
+}
+.el-dropdown{
+    display: inline-block !important;
+}
 #home-button a {
     text-decoration: none;
     color: #333;

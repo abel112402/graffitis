@@ -11,6 +11,19 @@ header {
     flex-direction: column;
     z-index: 1;
 }
+.lang-select-div {
+    color: #949494;
+    font-size: 1.35rem;
+    font-weight: 400;
+    
+    transition: color 0.3s ease;
+    white-space: nowrap;
+}
+
+.el-dropdown{
+    padding-bottom: 0.5rem;
+    cursor: pointer;
+}
 
 /* Hamburger gomb (alapból rejtett desktopon) */
 #hamburger-btn {
